@@ -1,0 +1,33 @@
+{
+  "name": "CLOUDXPM-ADB-SCHEDCULER",
+  "version": "1.0.0",
+  "description": "CLOUDXPM 1초마다 adb device 상태 확인",
+  "main": "src/app.ts",
+  "repository": "https://github.com/cloudxdn/CLOUDXPM-ADB-SCHEDCULERhttps://github.com/cloudxdn/CLOUDXPM-ADB-SCHEDCULER",
+  "author": "lsj",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./bin/app.js",
+    "dev": "ts-node ./src/app.ts"
+  },
+  "dependencies": {
+    "@types/node": "^20.9.0",
+    "@typescript-eslint/eslint-plugin": "^6.11.0",
+    "@typescript-eslint/parser": "^6.11.0",
+    "app-root-path": "^3.1.0",
+    "axios": "^1.6.2",
+    "cron": "^3.1.6",
+    "dotenv": "^16.3.1",
+    "eslint": "^8.53.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0",
+    "typescript": "^5.2.2",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
