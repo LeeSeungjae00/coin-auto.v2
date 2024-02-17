@@ -1,7 +1,7 @@
 import { query } from 'winston';
 import { Account, Candle, Market } from '../interface/upbit';
 import logger from '../loaders/logger';
-import { makeToken } from '../util/upbitToken';
+import { makeToken } from '../service/upbitToken';
 import { GET_ACCOUNT, GET_CANDLE_LIST, GET_COIN_LIST } from './routes';
 import upbitAPIClient from './upbitClient';
 
@@ -28,8 +28,11 @@ export const getCandles = (params: {
   count: number;
   to?: string;
 }): Promise<Candle[]> => {
-  return upbitAPIClient
-    .get(GET_CANDLE_LIST, { params })
-    .then((res) => res.data)
-    .catch((e) => logger.error(e));
+  const config = {
+    params,
+  };
+
+  return upbitAPIClient.get(GET_CANDLE_LIST, config).then((res) => {
+    return res.data;
+  });
 };

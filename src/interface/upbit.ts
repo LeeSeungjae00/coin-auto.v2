@@ -28,3 +28,7 @@ export interface Candle {
   change_price: number;
   change_rate: number;
 }
+
+export interface CoinNavigator extends Market {
+  status: 'buy' | 'sell' | 'hold';
+}
