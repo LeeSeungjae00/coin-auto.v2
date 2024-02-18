@@ -32,7 +32,13 @@ const main = async () => {
 
   await slackSend('=====분 석 시 작=====');
   for (const coin of market) {
-    const candles = await getCandles({ count: 200, market: coin.market });
+    const date = new Date();
+    date.setHours(date.getHours() - 1);
+    const candles = await getCandles({
+      count: 200,
+      market: coin.market,
+      to: date.toISOString(),
+    });
     await stratege(account, coin, candles);
     await sleep(100);
   }

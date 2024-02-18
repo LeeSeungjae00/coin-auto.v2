@@ -5,7 +5,14 @@ import { getRsi } from './service/rsi';
 const test = async () => {
   // const market = await getMarkets();
 
-  const candles = await getCandles({ market: 'KRW-BTT', count: 200 });
+  const date = new Date();
+  date.setHours(date.getHours() - 2);
+
+  const candles = await getCandles({
+    market: 'KRW-BTT',
+    count: 200,
+    to: date.toISOString(),
+  });
   const prevCandles = [...candles];
   prevCandles.shift();
   const [curr20MA, curr60MA, curr200MA] = getMALine(candles);
@@ -18,6 +25,7 @@ const test = async () => {
   console.log(prev20MA, prev60MA, prev200MA);
   console.log(rsi);
   console.log(prev20MA < prev60MA);
+  console.log();
 };
 
 test();
