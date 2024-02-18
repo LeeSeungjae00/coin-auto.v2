@@ -30,18 +30,17 @@ const main = async () => {
     .filter((coin) => coin.market.includes('KRW-'))
     .map((val) => ({ ...val, status: 'hold' }));
 
-  slackSend('=====분 석 시 작=====');
+  await slackSend('=====분 석 시 작=====');
   for (const coin of market) {
     const candles = await getCandles({ count: 200, market: coin.market });
     stratege(account, coin, candles);
     await sleep(100);
   }
-  slackSend('=====분 석 종 료=====');
-
-  slackSend('=====판 매 시 작=====');
+  await slackSend('=====분 석 종 료=====');
+  await slackSend('=====판 매 시 작=====');
   sell(market, account);
-  slackSend('=====판 매 종 료=====');
-  slackSend('=====구 매 시 작=====');
+  await slackSend('=====판 매 종 료=====');
+  await slackSend('=====구 매 시 작=====');
   buy(market);
-  slackSend('=====구 매 종 료=====');
+  await slackSend('=====구 매 종 료=====');
 };
