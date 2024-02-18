@@ -62,7 +62,7 @@ const transports = [
     zippedArchive: true,
     filename: `%DATE%.log`, // %DATE% = 위에서 설정한 datePattern 이 들어감
     dirname: logDir,
-    maxFiles: 30, // 30일치 로그 파일 저장
+    maxFiles: 1, // 30일치 로그 파일 저장
   }),
   new winstonDaily({
     level: 'error', // error 레벨 로그를 저장할 파일 설정
@@ -70,7 +70,7 @@ const transports = [
     zippedArchive: true,
     filename: `%DATE%.error.log`,
     dirname: logDir + '/error', // error.log 파일은 /logs/error 하위에 저장
-    maxFiles: 30,
+    maxFiles: 1,
   }),
 ];
 
