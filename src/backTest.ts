@@ -6,10 +6,10 @@ const test = async () => {
   // const market = await getMarkets();
 
   const date = new Date();
-  date.setHours(date.getHours() - 2);
+  date.setHours(date.getHours() - 1);
 
   const candles = await getCandles({
-    market: 'KRW-BTT',
+    market: 'KRW-HIVE',
     count: 200,
     to: date.toISOString(),
   });
@@ -25,7 +25,7 @@ const test = async () => {
   console.log(prev20MA, prev60MA, prev200MA);
   console.log(rsi);
   console.log(prev20MA < prev60MA);
-  console.log();
+  console.log(curr20MA > curr60MA);
 };
 
 test();

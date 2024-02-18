@@ -53,7 +53,9 @@ export async function postBuyCoin(market: string, price: string) {
   const config: AxiosRequestConfig = {
     headers: { Authorization: `Bearer ${makePostToken(data)}` },
   };
-  const res = await upbitAPIClient.post(POST_OERDER_COIN, data, config);
+  const res = await upbitAPIClient
+    .post(POST_OERDER_COIN, data, config)
+    .catch((e) => logger.error(e));
   return res.data;
 }
 
@@ -67,6 +69,8 @@ export async function postSellCoin(market: string, volume: string) {
   const config: AxiosRequestConfig = {
     headers: { Authorization: `Bearer ${makePostToken(data)}` },
   };
-  const res = await upbitAPIClient.post(POST_OERDER_COIN, data, config);
+  const res = await upbitAPIClient
+    .post(POST_OERDER_COIN, data, config)
+    .catch((e) => logger.error(e));
   return res.data;
 }
