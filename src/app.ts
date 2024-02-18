@@ -12,7 +12,7 @@ import { sell } from './service/sell';
 dotenv.config();
 
 const mainCron = new CronJob(
-  '1 * * * *',
+  '59 * * * *',
   async () => {
     try {
       await main();
