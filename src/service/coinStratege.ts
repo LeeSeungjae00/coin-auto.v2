@@ -26,11 +26,6 @@ export const stratege = async (
   ) {
     coin.status = 'buy';
     logger.info(`${coin.korean_name}가 구매조건에 적합`);
-    await slackSend(`${coin.korean_name}가 구매조건에 적합 \n
-                RSI : ${rsi} \n
-                MA20 : ${curr20MA} \n
-                MA60 : ${curr60MA} \n
-                MA200 : ${curr200MA} \n`);
   }
 
   //판매 조건
@@ -40,6 +35,5 @@ export const stratege = async (
   ) {
     coin.status = 'sell';
     logger.info(`${coin.korean_name}가 판매조건에 적합`);
-    await slackSend(`${coin.korean_name}가 판매조건에 적합`);
   }
 };

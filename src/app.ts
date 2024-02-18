@@ -30,7 +30,7 @@ const main = async () => {
     .filter((coin) => coin.market.includes('KRW-'))
     .map((val) => ({ ...val, status: 'hold' }));
 
-  await slackSend('=====분 석 시 작=====');
+  await slackSend('=====시 작=====');
   for (const coin of market) {
     const date = new Date();
     date.setHours(date.getHours() - 1);
@@ -42,13 +42,22 @@ const main = async () => {
     await stratege(account, coin, candles);
     await sleep(100);
   }
-  await slackSend('=====분 석 종 료=====');
-  await slackSend('=====판 매 시 작=====');
   await sell(market, account);
-  await slackSend('=====판 매 종 료=====');
-  await slackSend('=====구 매 시 작=====');
   await buy(market);
-  await slackSend('=====구 매 종 료=====');
-};
 
-main();
+  const buyStr = market
+    .filter((val) => val.status === 'buy')
+    .reduce((prev, curr) => {
+      return (prev += `${curr.korean_name} | ${curr.english_name} | 구매 \n`);
+    }, '');
+
+  const sellStr = market
+    .filter((val) => val.status === 'sell')
+    .reduce((prev, curr) => {
+      return (prev += `${curr.korean_name} | ${curr.english_name} | 판매 \n`);
+    }, '');
+
+  await slackSend(`${buyStr} \n ${sellStr}`);
+
+  await slackSend('=====종 료=====');
+};

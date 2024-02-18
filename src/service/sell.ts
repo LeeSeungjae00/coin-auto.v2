@@ -11,7 +11,6 @@ export const sell = async (market: CoinNavigator[], account: Account[]) => {
         ?.balance || '0';
     await postSellCoin(coin.market, volume);
     logger.info(`${coin.market} | ${coin.korean_name} | ${volume}원 매도 완료`);
-    slackSend(`${coin.market} | ${coin.korean_name} | ${volume}원 매도 완료`);
     sleep(100);
   }
 };
