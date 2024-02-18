@@ -38,9 +38,9 @@ const main = async () => {
   }
   await slackSend('=====분 석 종 료=====');
   await slackSend('=====판 매 시 작=====');
-  sell(market, account);
+  await sell(market, account);
   await slackSend('=====판 매 종 료=====');
   await slackSend('=====구 매 시 작=====');
-  buy(market);
+  await buy(market);
   await slackSend('=====구 매 종 료=====');
 };
