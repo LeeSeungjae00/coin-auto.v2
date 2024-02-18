@@ -12,6 +12,7 @@
     "dev": "ts-node ./src/app.ts"
   },
   "dependencies": {
+    "@slack/web-api": "^7.0.2",
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
