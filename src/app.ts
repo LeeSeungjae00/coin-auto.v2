@@ -44,5 +44,3 @@ const main = async () => {
   await buy(market);
   await slackSend('=====구 매 종 료=====');
 };
-
-main();
