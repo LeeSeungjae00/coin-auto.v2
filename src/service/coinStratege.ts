@@ -1,12 +1,10 @@
-import { getCandles } from '../api/upbit';
 import { Account, Candle, CoinNavigator, Market } from '../interface/upbit';
 import logger from '../loaders/logger';
 import { slackSend } from '../utils/slack';
-import { sleep } from '../utils/sleep';
 import { getMALine } from './maLine';
 import { getRsi } from './rsi';
 
-export const stratege = (
+export const stratege = async (
   account: Account[],
   coin: CoinNavigator,
   candles: Candle[]
@@ -28,7 +26,7 @@ export const stratege = (
   ) {
     coin.status = 'buy';
     logger.info(`${coin.korean_name}가 구매조건에 적합`);
-    slackSend(`${coin.korean_name}가 구매조건에 적합 \n
+    await slackSend(`${coin.korean_name}가 구매조건에 적합 \n
                 RSI : ${rsi} \n
                 MA20 : ${curr20MA} \n
                 MA60 : ${curr60MA} \n
@@ -42,6 +40,6 @@ export const stratege = (
   ) {
     coin.status = 'sell';
     logger.info(`${coin.korean_name}가 판매조건에 적합`);
-    slackSend(`${coin.korean_name}가 판매조건에 적합`);
+    await slackSend(`${coin.korean_name}가 판매조건에 적합`);
   }
 };
