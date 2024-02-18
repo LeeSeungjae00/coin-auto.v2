@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node ./bin/app.js",
-    "dev": "ts-node ./src/app.ts"
+    "dev": "ts-node ./src/app.ts",
+    "backtest": "ts-node ./src/backtest.ts"
   },
   "dependencies": {
     "@slack/web-api": "^7.0.2",

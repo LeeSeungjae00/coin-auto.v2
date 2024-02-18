@@ -3,7 +3,7 @@ import { Candle } from '../interface/upbit';
 export const getRsi = (candles: Candle[]) => {
   if (candles.length < 14) throw 'rsi have to 14 candels';
 
-  const tempCandles = [...candles].splice(0, 14);
+  const tempCandles = [...candles].slice(0, 14);
 
   let Au = 0;
   let Ad = 0;
