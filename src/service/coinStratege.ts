@@ -22,7 +22,7 @@ export const stratege = async (
     prev60MA > prev200MA &&
     curr20MA > curr60MA &&
     curr60MA > curr200MA &&
-    rsi < 90
+    rsi < 95
   ) {
     coin.status = 'buy';
     logger.info(`${coin.korean_name}가 구매조건에 적합`);
@@ -31,7 +31,7 @@ export const stratege = async (
   //판매 조건
   if (
     account.map((coin) => coin.currency).includes(coin.market.split('-')[1]) &&
-    (curr20MA < curr60MA || rsi > 90)
+    (curr20MA < curr60MA || rsi > 95)
   ) {
     coin.status = 'sell';
     logger.info(`${coin.korean_name}가 판매조건에 적합`);
