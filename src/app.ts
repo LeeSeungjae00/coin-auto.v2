@@ -13,9 +13,9 @@ dotenv.config();
 
 const mainCron = new CronJob(
   '0 * * * *',
-  async () => {
+  () => {
     try {
-      await main();
+      main();
     } catch (e) {
       logger.error(e);
     }
@@ -57,7 +57,7 @@ const main = async () => {
       return (prev += `${curr.korean_name} | ${curr.english_name} | 판매 \n`);
     }, '');
 
-  await slackSend(`${buyStr} \n ${sellStr}`);
+  await slackSend(`${buyStr}${sellStr}`);
 
   await slackSend('=====종 료=====');
 };
