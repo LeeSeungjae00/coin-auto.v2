@@ -25,39 +25,44 @@ const mainCron = new CronJob(
 );
 
 const main = async () => {
-  const account = await getAccount();
-  const market: CoinNavigator[] = (await getMarkets())
-    .filter((coin) => coin.market.includes('KRW-'))
-    .map((val) => ({ ...val, status: 'hold' }));
+  try {
+    const account = await getAccount();
+    const market: CoinNavigator[] = (await getMarkets())
+      .filter((coin) => coin.market.includes('KRW-'))
+      .map((val) => ({ ...val, status: 'hold' }));
 
-  await slackSend('=====시 작=====');
-  for (const coin of market) {
-    const date = new Date();
-    date.setHours(date.getHours() - 1);
-    const candles = await getCandles({
-      count: 200,
-      market: coin.market,
-      to: date.toISOString(),
-    });
-    await stratege(account, coin, candles);
-    await sleep(100);
+    await slackSend('=====시 작=====');
+    for (const coin of market) {
+      const date = new Date();
+      date.setHours(date.getHours() - 1);
+      const candles = await getCandles({
+        count: 200,
+        market: coin.market,
+        to: date.toISOString(),
+      });
+      await stratege(account, coin, candles);
+      await sleep(100);
+    }
+    await sell(market, account);
+    await buy(market);
+
+    const buyStr = market
+      .filter((val) => val.status === 'buy')
+      .reduce((prev, curr) => {
+        return (prev += `${curr.korean_name} | ${curr.english_name} | 구매 \n`);
+      }, '');
+
+    const sellStr = market
+      .filter((val) => val.status === 'sell')
+      .reduce((prev, curr) => {
+        return (prev += `${curr.korean_name} | ${curr.english_name} | 판매 \n`);
+      }, '');
+
+    await slackSend(buyStr);
+    await slackSend(sellStr);
+
+    await slackSend('=====종 료=====');
+  } catch (error) {
+    logger.error(error);
   }
-  await sell(market, account);
-  await buy(market);
-
-  const buyStr = market
-    .filter((val) => val.status === 'buy')
-    .reduce((prev, curr) => {
-      return (prev += `${curr.korean_name} | ${curr.english_name} | 구매 \n`);
-    }, '');
-
-  const sellStr = market
-    .filter((val) => val.status === 'sell')
-    .reduce((prev, curr) => {
-      return (prev += `${curr.korean_name} | ${curr.english_name} | 판매 \n`);
-    }, '');
-
-  await slackSend(`${buyStr}${sellStr}`);
-
-  await slackSend('=====종 료=====');
 };
