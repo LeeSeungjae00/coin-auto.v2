@@ -23,7 +23,5 @@ const getRangeCandles = async (range : number, market : string) => {
 }
 
 (async () => {
-  // await getRangeCandles(365 * 24 , "KRW-BTC")
-  await slackSend("test1")
-  await slackSend("test2")
+  await getRangeCandles(365 * 24 , "KRW-BTC")
 })()

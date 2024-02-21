@@ -58,8 +58,8 @@ const main = async () => {
         return (prev += `${curr.korean_name} | ${curr.english_name} | 판매 \n`);
       }, '');
 
-    await slackSend(buyStr);
-    await slackSend(sellStr);
+    await slackSend(`구매 목록 \n${buyStr}`);
+    await slackSend(`판매 목록 \n${sellStr}`);
 
     await slackSend('=====종 료=====');
   } catch (error) {
