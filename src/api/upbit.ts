@@ -6,7 +6,7 @@ import {
   GET_ACCOUNT,
   GET_CANDLE_LIST,
   GET_COIN_LIST,
-  POST_OERDER_COIN,
+  POST_OERDER_COIN as POST_ORDER_COIN,
 } from './routes';
 import upbitAPIClient from './upbitClient';
 import { AxiosRequestConfig } from 'axios';
@@ -54,7 +54,7 @@ export async function postBuyCoin(market: string, price: string) {
     headers: { Authorization: `Bearer ${makePostToken(data)}` },
   };
   const res = await upbitAPIClient
-    .post(POST_OERDER_COIN, data, config)
+    .post(POST_ORDER_COIN, data, config)
     .catch((e) => logger.error(e));
   return res.data;
 }
@@ -70,7 +70,7 @@ export async function postSellCoin(market: string, volume: string) {
     headers: { Authorization: `Bearer ${makePostToken(data)}` },
   };
   const res = await upbitAPIClient
-    .post(POST_OERDER_COIN, data, config)
+    .post(POST_ORDER_COIN, data, config)
     .catch((e) => logger.error(e));
   return res.data;
 }

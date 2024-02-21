@@ -14,6 +14,7 @@ export const strategy = async (
   const [prev20MA, prev60MA, prev200MA] = getMALine(prevCandles);
   const rsi = getRsi(candles);
 
+  coin.status = 'hold'
   //사는 조건
   if (
     !account.map((coin) => coin.currency).includes(coin.market.split('-')[1]) &&
@@ -21,7 +22,10 @@ export const strategy = async (
     prev60MA > prev200MA &&
     curr20MA > curr60MA &&
     curr60MA > curr200MA &&
-    rsi < 95
+    rsi < 95 &&
+    curr60MA * 1.05 > candles[0].trade_price &&
+    candles[0].trade_price > curr60MA
+
   ) {
     coin.status = 'buy';
     logger.info(`${coin.korean_name}가 구매조건에 적합`);
@@ -35,4 +39,5 @@ export const strategy = async (
     coin.status = 'sell';
     logger.info(`${coin.korean_name}가 판매조건에 적합`);
   }
+
 };
