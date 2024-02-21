@@ -19,7 +19,6 @@ export const strategy = async (
   if (
     !account.map((coin) => coin.currency).includes(coin.market.split('-')[1]) &&
     prev20MA < prev60MA &&
-    prev60MA > prev200MA &&
     curr20MA > curr60MA &&
     rsi < 95 &&
     curr60MA * 1.05 > candles[0].trade_price &&
