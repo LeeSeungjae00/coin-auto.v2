@@ -1,75 +1,101 @@
-import { getAccount, getCandles, getMarkets } from './api/upbit';
+import { getCandles, getMarkets } from './api/upbit';
 import { Account, Candle, CoinNavigator } from './interface/upbit';
 import { strategy } from './service/coinStrategy';
-import { getMALine } from './service/maLine';
-import { getRsi } from './service/rsi';
-import { slackSend } from './utils/slack';
 import { sleep } from './utils/sleep';
 
-// 17520 2년
+let initMoney = 500000;
+let CAPITAL = initMoney;
+let AMOUNT = 10000;
+const windLoss: ('win' | 'lose')[] = [];
 
-const getRangeCandles = async (from : number,to : number, market : string) => {
-  const date = new Date()
-  date.setHours(date.getHours() - from)
-  let result : Candle[] = []
+const main = async () => {
+  const markets = (await getMarkets())
+    .filter((market) => market.market.includes('KRW-'))
+    .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
-  for(let i = to; i < from; i+=200){
-    const candles = await getCandles({market, count : 200, to : date.toISOString()})
-    date.setHours(date.getHours() + 200)
-    await sleep(500)
-    result = [...candles,...result]
+  console.log(markets.length, '개의 코인을 분석합니다.');
+
+  for (const market of markets) {
+    const from = new Date('2022-02-20T00:00:00');
+    const to = new Date('2024-02-20T00:00:00');
+    await backtest(market, from, to);
   }
 
-  console.log(result[0])
-  return result
-}
+  const rate = (
+    (windLoss.filter((val) => val === 'win').length / windLoss.length) *
+    100
+  ).toFixed(0);
+  console.table({
+    승률: rate,
+    잔고: CAPITAL,
+    손익: (((CAPITAL - initMoney) / initMoney) * 100).toFixed(2),
+  });
+};
 
-(async () => {
-  const NAME = "BTC" 
-  let CAPITAL = 500000
-  let AMOUNT = 400000
-  const windLoss :( "win" | "lose")[] = []
-  const account : Account[] = []
-  const totalCandles = await getRangeCandles(365 * 24 ,0, `KRW-${NAME}`)
-  let market : CoinNavigator =  {english_name : NAME, korean_name : '비트코인', market : "KRW-BTC", status :'hold'}
+const getRangeCandles = async (from: Date, to: Date, market: string) => {
+  let result: Candle[] = [];
 
+  while (to >= from) {
+    const candles = await getCandles({
+      market,
+      count: 200,
+      to: to.toISOString(),
+    });
+    to.setHours(to.getHours() - 200);
+    await sleep(300);
+    result = [...result, ...candles];
+  }
 
-  console.log(totalCandles[totalCandles.length - 1])
+  return result;
+};
 
-  while(totalCandles.length > 200){
-    const analyzedCandles = totalCandles.slice(totalCandles.length - 201, totalCandles.length - 1)
-    totalCandles.pop()
-    strategy(account,market,analyzedCandles)
-    if(market.status === 'buy'){
-      console.log("매수",analyzedCandles[0].candle_date_time_kst)
-      CAPITAL -= AMOUNT * 1.00005
+const backtest = async (market: CoinNavigator, from: Date, to: Date) => {
+  const account: Account[] = [];
+  const totalCandles = await getRangeCandles(from, to, market.market);
+  while (totalCandles.length > 200) {
+    const analyzedCandles = totalCandles.slice(
+      totalCandles.length - 201,
+      totalCandles.length - 1
+    );
+    totalCandles.pop();
+    strategy(account, market, analyzedCandles);
+    if (market.status === 'buy') {
+      console.log(
+        `매수 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price}`
+      );
+      CAPITAL -= AMOUNT * 1.00005;
       account.push({
         avg_buy_price: analyzedCandles[0].trade_price.toString(),
-        currency: NAME,
+        currency: market.market.split('-')[1],
         balance: (AMOUNT / analyzedCandles[0].trade_price).toString(),
         locked: '0',
         avg_buy_price_modified: false,
-        unit_currency: 'KRW'
-      })
+        unit_currency: 'KRW',
+      });
     }
 
-    if(market.status === 'sell'){
-      const sellCoin = account.pop()
-      if(sellCoin?.balance){
-        const profit = Number(sellCoin.balance) * analyzedCandles[0].trade_price
-        console.log("매도 가격: ",(profit - profit * 0.0005))
-        CAPITAL += (profit - profit * 0.0005)
-        if(AMOUNT <= profit){
-          windLoss.push("win")
-        }else{
-          windLoss.push('lose')
+    if (market.status === 'sell') {
+      const sellCoin = account.pop();
+      if (sellCoin?.balance) {
+        const profit =
+          Number(sellCoin.balance) * analyzedCandles[0].trade_price * 0.9995;
+        console.log(
+          `매도 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((profit - AMOUNT) / AMOUNT) * 100).toFixed(2)}%`
+        );
+        CAPITAL += profit;
+        if (AMOUNT <= profit) {
+          windLoss.push('win');
+        } else {
+          windLoss.push('lose');
         }
-        
       }
     }
   }
 
-  const rate = (windLoss.filter(val => val === 'win').length / windLoss.length * 100).toFixed(0)
-  console.log(rate)
-  console.log(CAPITAL)
-})()
+  const temp = account.pop();
+  if (temp) {
+    CAPITAL += totalCandles[0].trade_price * Number(temp.balance);
+  }
+};
+
+main();
