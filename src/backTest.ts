@@ -1,32 +1,29 @@
 import { getAccount, getCandles, getMarkets } from './api/upbit';
+import { Candle } from './interface/upbit';
 import { getMALine } from './service/maLine';
 import { getRsi } from './service/rsi';
+import { slackSend } from './utils/slack';
+import { sleep } from './utils/sleep';
 
-const test = async () => {
-  // const market = await getMarkets();
+// 17520 2년
 
-  const date = new Date();
-  date.setHours(date.getHours() - 2);
+const getRangeCandles = async (range : number, market : string) => {
+  const date = new Date()
+  date.setHours(date.getHours() - range)
+  let result : Candle[] = []
 
-  const candles = await getCandles({
-    market: 'KRW-ATOM',
-    count: 200,
-    to: date.toISOString(),
-  });
-  const prevCandles = [...candles];
-  prevCandles.shift();
-  const [curr20MA, curr60MA, curr200MA] = getMALine(candles);
-  const [prev20MA, prev60MA, prev200MA] = getMALine(prevCandles);
-  const rsi = getRsi(candles);
-  // const test = getMALine(candles);
+  for(let i = 0; i < range; i+=200){
+    const candles = await getCandles({market, count : 200, to : date.toISOString()})
+    await sleep(100)
+    result = [...candles,...result]
+  }
 
-  console.log(candles[0]);
-  console.log(curr20MA, curr60MA, curr200MA);
-  console.log(prev20MA, prev60MA, prev200MA);
-  console.log(rsi);
-  console.log(prev20MA < prev60MA);
-  console.log(curr20MA > curr60MA);
-  console.log(rsi);
-};
+  console.log(result[0])
+  return result
+}
 
-test();
+(async () => {
+  // await getRangeCandles(365 * 24 , "KRW-BTC")
+  await slackSend("test1")
+  await slackSend("test2")
+})()
