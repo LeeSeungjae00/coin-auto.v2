@@ -1,7 +1,6 @@
 import { postBuyCoin } from '../api/upbit';
 import { CoinNavigator } from '../interface/upbit';
 import logger from '../loaders/logger';
-import { slackSend } from '../utils/slack';
 import { sleep } from '../utils/sleep';
 
 export const buy = async (market: CoinNavigator[]) => {

@@ -66,3 +66,5 @@ const main = async () => {
     logger.error(error);
   }
 };
+
+main()

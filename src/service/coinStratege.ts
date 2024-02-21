@@ -1,6 +1,5 @@
 import { Account, Candle, CoinNavigator, Market } from '../interface/upbit';
 import logger from '../loaders/logger';
-import { slackSend } from '../utils/slack';
 import { getMALine } from './maLine';
 import { getRsi } from './rsi';
 
