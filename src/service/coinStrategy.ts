@@ -33,7 +33,7 @@ export const strategy = async (
   //판매 조건
   if (
     account.map((coin) => coin.currency).includes(coin.market.split('-')[1]) &&
-    (curr20MA < curr60MA || rsi > 95)
+    (curr20MA < curr60MA || rsi > 95 || curr20MA * 1.15 < candles[0].trade_price) 
   ) {
     coin.status = 'sell';
     logger.info(`${coin.korean_name}가 판매조건에 적합`);
