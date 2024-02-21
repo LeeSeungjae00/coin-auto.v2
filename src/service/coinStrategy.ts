@@ -3,7 +3,7 @@ import logger from '../loaders/logger';
 import { getMALine } from './maLine';
 import { getRsi } from './rsi';
 
-export const stratege = async (
+export const strategy = async (
   account: Account[],
   coin: CoinNavigator,
   candles: Candle[]

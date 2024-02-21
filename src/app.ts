@@ -4,7 +4,7 @@ import logger from './loaders/logger';
 import { getAccount, getCandles, getMarkets } from './api/upbit';
 import { sleep } from './utils/sleep';
 import { CoinNavigator } from './interface/upbit';
-import { stratege } from './service/coinStratege';
+import { strategy } from './service/coinStrategy';
 import { slackSend } from './utils/slack';
 import { buy } from './service/buy';
 import { sell } from './service/sell';
@@ -40,7 +40,7 @@ const main = async () => {
         market: coin.market,
         to: date.toISOString(),
       });
-      await stratege(account, coin, candles);
+      await strategy(account, coin, candles);
       await sleep(100);
     }
     await sell(market, account);

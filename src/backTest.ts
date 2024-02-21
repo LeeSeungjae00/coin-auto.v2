@@ -1,5 +1,5 @@
 import { getAccount, getCandles, getMarkets } from './api/upbit';
-import { Candle } from './interface/upbit';
+import { Account, Candle } from './interface/upbit';
 import { getMALine } from './service/maLine';
 import { getRsi } from './service/rsi';
 import { slackSend } from './utils/slack';
@@ -7,12 +7,12 @@ import { sleep } from './utils/sleep';
 
 // 17520 2년
 
-const getRangeCandles = async (range : number, market : string) => {
+const getRangeCandles = async (from : number,to : number, market : string) => {
   const date = new Date()
-  date.setHours(date.getHours() - range)
+  date.setHours(date.getHours() - from)
   let result : Candle[] = []
 
-  for(let i = 0; i < range; i+=200){
+  for(let i = to; i < from; i+=200){
     const candles = await getCandles({market, count : 200, to : date.toISOString()})
     await sleep(100)
     result = [...candles,...result]
@@ -23,5 +23,6 @@ const getRangeCandles = async (range : number, market : string) => {
 }
 
 (async () => {
-  await getRangeCandles(365 * 24 , "KRW-BTC")
+  const account : Account[] = []
+  await getRangeCandles(365 * 24 ,0, "KRW-BTC")
 })()
