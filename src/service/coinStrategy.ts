@@ -12,7 +12,6 @@ export const strategy = async (
   try {
     const prevCandles = [...candles];
     prevCandles.shift();
-    console.log(candles.length, coin.market);
     const [curr20MA, curr60MA, curr200MA] = getMALine(candles);
     const [prev20MA, prev60MA, prev200MA] = getMALine(prevCandles);
     const rsi = getRsi(candles);
