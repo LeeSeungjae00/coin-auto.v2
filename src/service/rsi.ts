@@ -8,7 +8,7 @@ export const getRsi = (candles: Candle[]) => {
   let Au = 0;
   let Ad = 0;
 
-  for (let i = tempCandles.length - 2; i > 0; i--) {
+  for (let i = 0; i < tempCandles.length - 1; i++) {
     const val = tempCandles[i].trade_price - tempCandles[i + 1].trade_price;
     if (val < 0) {
       Ad += val;
@@ -16,5 +16,11 @@ export const getRsi = (candles: Candle[]) => {
       Au += val;
     }
   }
-  return Math.round((Au / (Au + Math.abs(Ad))) * 100);
+
+  let RS = Au / (Ad * -1);
+
+  // RSI 계산
+  let RSI = 100 - 100 / (1 + RS);
+
+  return RSI;
 };
