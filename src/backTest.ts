@@ -5,6 +5,9 @@ import { strategy } from './service/coinStrategy';
 import { slackSend } from './utils/slack';
 import { sleep } from './utils/sleep';
 import { Console } from 'node:console';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 class CoinAnalyzer {
   private initMoney = 5000000;
@@ -17,7 +20,7 @@ class CoinAnalyzer {
 
   async main() {
     const markets = (await getMarkets())
-      .filter((market) => market.market.includes('KRW-BCH'))
+      .filter((market) => market.market.includes('KRW-'))
       .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
     console.log(markets.length, '개의 코인을 분석합니다.');
@@ -49,6 +52,21 @@ class CoinAnalyzer {
     slackSend(str, '#backtest');
   }
 
+  private async getDBCandles(market: string) {
+    const candles = await prisma.candle.findMany({
+      orderBy: [
+        {
+          candle_date_time_kst: 'desc',
+        },
+      ],
+      where: {
+        market: market,
+      },
+    });
+
+    return candles;
+  }
+
   private async getRangeCandles(from: Date, to: Date, market: string) {
     let result: Candle[] = [];
 
@@ -68,7 +86,8 @@ class CoinAnalyzer {
 
   private async backtest(market: CoinNavigator, from: Date, to: Date) {
     const account: Account[] = [];
-    const totalCandles = await this.getRangeCandles(from, to, market.market);
+    // const totalCandles = await this.getRangeCandles(from, to, market.market);
+    const totalCandles = await this.getDBCandles(market.market);
     while (totalCandles.length >= 200) {
       const analyzedCandles = totalCandles.slice(
         totalCandles.length - 200,

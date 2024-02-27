@@ -1,19 +1,28 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model candle {
-  candle_date_time_kst String NotNull
-  candle_unit
+  candle_date_time_kst    DateTime           @db.DateTime(6)
+  candle_unit             candle_candle_unit
+  market                  String             @db.VarChar(255)
+  candle_acc_trade_volume Float
+  high_price              Float
+  low_price               Float
+  opening_price           Float
+  trade_price             Float
+
+  @@id([candle_date_time_kst, candle_unit, market])
+}
+
+enum candle_candle_unit {
+  M60
+  M30
+  M15
+  M3
 }
