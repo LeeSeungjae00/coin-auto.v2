@@ -2,7 +2,7 @@ import { Candle } from '../interface/upbit';
 
 export const getMALine = (candles: Candle[]) => {
   const tempCandles = [...candles];
-  if (tempCandles.length < 199) throw 'MA line is must over 200';
+  if (tempCandles.length < 198) throw 'MA line is must over 200';
 
   const MA20 =
     tempCandles.slice(0, 20).reduce((prev, curr) => {
