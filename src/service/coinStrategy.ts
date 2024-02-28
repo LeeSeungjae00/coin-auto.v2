@@ -1,4 +1,3 @@
-import { checkPrimeSync } from 'node:crypto';
 import { Account, Candle, CoinNavigator, Market } from '../interface/upbit';
 import logger from '../loaders/logger';
 import { getMALine } from './maLine';
@@ -26,8 +25,8 @@ export const strategy = async (
       curr20MA > curr60MA &&
       rsi < 95 &&
       curr60MA * 1.05 > candles[0].trade_price &&
-      candles[0].trade_price > curr60MA
-      // curr20MA > prev20MA
+      candles[0].trade_price > curr60MA &&
+      curr20MA > prev20MA
     ) {
       coin.status = 'buy';
       logger.info(`${coin.korean_name}(이)가 구매조건에 적합`);
@@ -39,8 +38,7 @@ export const strategy = async (
         .map((coin) => coin.currency)
         .includes(coin.market.split('-')[1]) &&
       (curr20MA < curr60MA ||
-        // rsi > 90 ||
-        curr20MA * 1.08 < candles[0].trade_price)
+        (curr20MA * 1.08 < candles[0].trade_price && rsi > 70))
     ) {
       coin.status = 'sell';
       logger.info(`${coin.korean_name}(이)가 판매조건에 적합`);
