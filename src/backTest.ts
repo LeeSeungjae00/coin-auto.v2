@@ -6,6 +6,7 @@ import { slackSend } from './utils/slack';
 import { sleep } from './utils/sleep';
 import { Console } from 'node:console';
 import { PrismaClient } from '@prisma/client';
+import { getRsi } from './service/rsi';
 
 const prisma = new PrismaClient();
 
