@@ -1,5 +1,5 @@
 import { Transform } from 'node:stream';
-import { getCandles, getMarkets } from './api/upbit';
+import { getAccount, getCandles, getMarkets } from './api/upbit';
 import { Account, Candle, CoinNavigator } from './interface/upbit';
 import { strategy } from './service/coinStrategy';
 import { slackSend } from './utils/slack';
@@ -165,5 +165,21 @@ class CoinAnalyzer {
   }
 }
 
-const coinAnalyzer = new CoinAnalyzer();
-coinAnalyzer.main();
+// const coinAnalyzer = new CoinAnalyzer();
+// coinAnalyzer.main();
+
+console.log();
+(async () => {
+  const res = await getAccount();
+  const KRW = res.find((val) => val.currency === 'KRW');
+
+  const remain =
+    80 -
+    res.filter((val) => !['SOLO', 'XCORE', 'KRW'].includes(val.currency))
+      .length;
+
+  console.log();
+  if (KRW?.currency) console.log(Math.round(Number(KRW?.balance) / remain));
+
+  console.log();
+})();
