@@ -44,7 +44,7 @@ const main = async () => {
       await sleep(100);
     }
     await sell(market, account);
-    await buy(market);
+    await buy(market, account);
 
     const buyStr = market
       .filter((val) => val.status === 'buy')
@@ -66,4 +66,3 @@ const main = async () => {
     logger.error(error);
   }
 };
-

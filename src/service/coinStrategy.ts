@@ -23,7 +23,6 @@ export const strategy = async (
         .includes(coin.market.split('-')[1]) &&
       prev20MA < prev60MA &&
       curr20MA > curr60MA &&
-      rsi < 95 &&
       curr60MA * 1.05 > candles[0].trade_price &&
       curr20MA > prev20MA
     ) {
