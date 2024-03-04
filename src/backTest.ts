@@ -11,9 +11,8 @@ import { getRsi } from './service/rsi';
 const prisma = new PrismaClient();
 
 class CoinAnalyzer {
-  private initMoney = 5000000;
-  private CAPITAL = this.initMoney;
-  private AMOUNT = 100000;
+  private TOTAL = 0;
+  private CAPITAL = 10000;
   private windLoss: ('win' | 'lose')[] = [];
   private startDate = new Date('2024-02-26T08:00:00');
   private endDate = new Date('2024-02-27T09:00:00');
@@ -29,7 +28,7 @@ class CoinAnalyzer {
     for (const market of markets) {
       const from = new Date(this.startDate);
       const to = new Date(this.endDate);
-      await this.backtest(market, from, to);
+      this.TOTAL += await this.backtest(market, from, to);
     }
 
     const rate = (
@@ -39,8 +38,9 @@ class CoinAnalyzer {
     ).toFixed(0);
     const result = {
       승률: `${rate}%`,
-      잔고: this.CAPITAL,
-      손익: `${(((this.CAPITAL - this.initMoney) / this.initMoney) * 100).toFixed(2)}%`,
+      잔고: this.TOTAL,
+      손익:
+        ((this.TOTAL / (markets.length * this.CAPITAL)) * 100).toFixed(2) + '%',
     };
 
     console.table(result);
@@ -48,6 +48,9 @@ class CoinAnalyzer {
       최대구매: Object.keys(this.dateMap)
         .map((val) => ({ date: val, count: this.dateMap[val] }))
         .sort((a, b) => b.count - a.count)[0],
+      매수횟수: Object.keys(this.dateMap).reduce((prev, curr) => {
+        return prev + this.dateMap[curr];
+      }, 0),
     });
     const str = this.getTable(result);
     slackSend(str, '#backtest');
@@ -87,6 +90,7 @@ class CoinAnalyzer {
 
   private async backtest(market: CoinNavigator, from: Date, to: Date) {
     const account: Account[] = [];
+    let result = this.CAPITAL;
     // const totalCandles = await this.getRangeCandles(from, to, market.market);
     const totalCandles = await this.getDBCandles(market.market);
     while (totalCandles.length >= 200) {
@@ -98,30 +102,24 @@ class CoinAnalyzer {
       strategy(account, market, analyzedCandles);
 
       if (market.status === 'buy') {
-        console.log(
-          `매수 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price}`
-        );
+        // console.log(
+        //   `매수 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price}`
+        // );
         this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()]
           ? ++this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()]
           : (this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()] =
               1);
 
-        let balance;
+        const balance = (
+          (result * 0.99995) /
+          analyzedCandles[0].trade_price
+        ).toString();
+        result = 0;
 
-        if (this.CAPITAL >= this.AMOUNT * 1.00005) {
-          this.CAPITAL -= this.AMOUNT * 1.00005;
-          balance = (this.AMOUNT / analyzedCandles[0].trade_price).toString();
-        } else {
-          this.CAPITAL = 0;
-          balance = (
-            (this.CAPITAL * 0.99995) /
-            analyzedCandles[0].trade_price
-          ).toString();
-        }
         account.push({
           avg_buy_price: analyzedCandles[0].trade_price.toString(),
           currency: market.market.split('-')[1],
-          balance: (this.AMOUNT / analyzedCandles[0].trade_price).toString(),
+          balance: balance,
           locked: '0',
           avg_buy_price_modified: false,
           unit_currency: 'KRW',
@@ -133,11 +131,13 @@ class CoinAnalyzer {
         if (sellCoin?.balance) {
           const profit =
             Number(sellCoin.balance) * analyzedCandles[0].trade_price * 0.9995;
-          console.log(
-            `매도 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((profit - this.AMOUNT) / this.AMOUNT) * 100).toFixed(2)}%`
-          );
-          this.CAPITAL += profit;
-          if (this.AMOUNT <= profit) {
+          // console.log(
+          //   `매도 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((analyzedCandles[0].trade_price - Number(sellCoin.avg_buy_price)) / Number(sellCoin.avg_buy_price)) * 100).toFixed(2)}%`
+          // );
+          result += profit;
+          if (
+            (analyzedCandles[0].trade_price = Number(sellCoin.avg_buy_price))
+          ) {
             this.windLoss.push('win');
           } else {
             this.windLoss.push('lose');
@@ -148,8 +148,14 @@ class CoinAnalyzer {
 
     const temp = account.pop();
     if (temp) {
-      this.CAPITAL += totalCandles[0].trade_price * Number(temp.balance);
+      result = totalCandles[0].trade_price * Number(temp.balance);
     }
+
+    console.log(
+      `${market.korean_name} | ${(((result - this.CAPITAL) / this.CAPITAL) * 100).toFixed(2)}% | ${result}`
+    );
+
+    return result;
   }
 
   private ts = new Transform({

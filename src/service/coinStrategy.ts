@@ -1,4 +1,4 @@
-import { Account, Candle, CoinNavigator, Market } from '../interface/upbit';
+import { Account, Candle, CoinNavigator } from '../interface/upbit';
 import logger from '../loaders/logger';
 import { getMALine } from './maLine';
 import { getRsi } from './rsi';
@@ -28,7 +28,6 @@ export const strategy = async (
       curr20MA > prev20MA
     ) {
       coin.status = 'buy';
-      logger.info(`${coin.korean_name}(이)가 구매조건에 적합`);
     }
 
     //판매 조건
@@ -40,7 +39,6 @@ export const strategy = async (
         (curr20MA * 1.08 < candles[0].trade_price && rsi > 70))
     ) {
       coin.status = 'sell';
-      logger.info(`${coin.korean_name}(이)가 판매조건에 적합`);
     }
   } catch (error) {
     console.log(error);
