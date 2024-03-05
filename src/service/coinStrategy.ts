@@ -9,22 +9,13 @@ export const strategy = async (
   candles: Candle[]
 ) => {
   try {
-    const prevCandles = [...candles];
-    prevCandles.shift();
-    const [curr20MA, curr60MA, curr200MA] = getMALine(candles);
-    const [prev20MA, prev60MA, prev200MA] = getMALine(prevCandles);
-    const rsi = getRsi(candles);
-
     coin.status = 'hold';
     //사는 조건
     if (
       !account
         .map((coin) => coin.currency)
         .includes(coin.market.split('-')[1]) &&
-      prev20MA < prev60MA &&
-      curr20MA > curr60MA &&
-      curr60MA * 1.05 > candles[0].trade_price &&
-      curr20MA > prev20MA
+      buyCondition(candles)
     ) {
       coin.status = 'buy';
     }
@@ -34,12 +25,61 @@ export const strategy = async (
       account
         .map((coin) => coin.currency)
         .includes(coin.market.split('-')[1]) &&
-      (curr20MA < curr60MA ||
-        (curr20MA * 1.08 < candles[0].trade_price && rsi > 70))
+      sellCondition(candles)
     ) {
       coin.status = 'sell';
     }
   } catch (error) {
     console.log(error);
   }
+};
+
+const buyCondition = (candles: Candle[]) => {
+  const tradePrices = candles.map((val) => val.trade_price);
+
+  const [ma20, ma60] = getMALine(candles);
+  const standardDeviation = Math.sqrt(
+    tradePrices.slice(0, 20).reduce((prev, curr) => {
+      return (prev += Math.pow(ma20 - curr, 2));
+    }, 0) / 20
+  );
+
+  const expectedBuyPrice = tradePrices[0] + standardDeviation;
+  const expectedMa20 =
+    tradePrices.slice(0, 19).reduce((prev, curr) => {
+      return (prev += curr);
+    }, expectedBuyPrice) / 20;
+  const expectedMa60 =
+    tradePrices.slice(0, 59).reduce((prev, curr) => {
+      return (prev += curr);
+    }, expectedBuyPrice) / 60;
+
+  return !(ma20 > ma60) && expectedMa20 > expectedMa60 && ma20 < expectedMa20;
+};
+
+const sellCondition = (candles: Candle[]) => {
+  const tradePrices = candles.map((val) => val.trade_price);
+  const [ma20] = getMALine(candles);
+  const standardDeviation = Math.sqrt(
+    tradePrices.slice(0, 20).reduce((prev, curr) => {
+      return (prev += Math.pow(ma20 - curr, 2));
+    }, 0) / 20
+  );
+
+  const bolingerUpper = ma20 + standardDeviation * 2;
+  const bolingerLower = ma20 - standardDeviation * 2;
+  const expectedMa20 =
+    tradePrices.slice(0, 19).reduce((prev, curr) => {
+      return (prev += curr);
+    }, bolingerUpper) / 20;
+  const expectedMa60 =
+    tradePrices.slice(0, 59).reduce((prev, curr) => {
+      return (prev += curr);
+    }, bolingerUpper) / 60;
+
+  return (
+    tradePrices[0] > Math.max(ma20 * 1.08, bolingerUpper) ||
+    tradePrices[0] < Math.min(ma20 * 0.92, bolingerLower) ||
+    !(expectedMa20 > expectedMa60)
+  );
 };

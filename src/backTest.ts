@@ -7,6 +7,7 @@ import { sleep } from './utils/sleep';
 import { Console } from 'node:console';
 import { PrismaClient } from '@prisma/client';
 import { getRsi } from './service/rsi';
+import { getMALine } from './service/maLine';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,7 @@ class CoinAnalyzer {
   private startDate = new Date('2024-02-26T08:00:00');
   private endDate = new Date('2024-02-27T09:00:00');
   private dateMap: { [key: string]: number } = {};
+  private tradeCount = 0;
 
   async main() {
     const markets = (await getMarkets())
@@ -48,9 +50,7 @@ class CoinAnalyzer {
       최대구매: Object.keys(this.dateMap)
         .map((val) => ({ date: val, count: this.dateMap[val] }))
         .sort((a, b) => b.count - a.count)[0],
-      매수횟수: Object.keys(this.dateMap).reduce((prev, curr) => {
-        return prev + this.dateMap[curr];
-      }, 0),
+      매도횟수: this.tradeCount,
     });
     const str = this.getTable(result);
     slackSend(str, '#backtest');
@@ -99,6 +99,7 @@ class CoinAnalyzer {
         totalCandles.length
       );
       totalCandles.pop();
+      // this.testStrategy(account, market, analyzedCandles);
       strategy(account, market, analyzedCandles);
 
       if (market.status === 'buy') {
@@ -129,15 +130,14 @@ class CoinAnalyzer {
       if (market.status === 'sell') {
         const sellCoin = account.pop();
         if (sellCoin?.balance) {
+          this.tradeCount++;
           const profit =
             Number(sellCoin.balance) * analyzedCandles[0].trade_price * 0.9995;
           // console.log(
           //   `매도 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((analyzedCandles[0].trade_price - Number(sellCoin.avg_buy_price)) / Number(sellCoin.avg_buy_price)) * 100).toFixed(2)}%`
           // );
           result += profit;
-          if (
-            (analyzedCandles[0].trade_price = Number(sellCoin.avg_buy_price))
-          ) {
+          if (analyzedCandles[0].trade_price > Number(sellCoin.avg_buy_price)) {
             this.windLoss.push('win');
           } else {
             this.windLoss.push('lose');
