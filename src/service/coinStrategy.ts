@@ -44,7 +44,7 @@ const buyCondition = (candles: Candle[]) => {
     }, 0) / 20
   );
 
-  const expectedBuyPrice = tradePrices[0] + standardDeviation;
+  const expectedBuyPrice = ma20 + standardDeviation * 4;
   const expectedMa20 =
     tradePrices.slice(0, 19).reduce((prev, curr) => {
       return (prev += curr);
