@@ -11,23 +11,22 @@ export const strategy = async (
   try {
     coin.status = 'hold';
     //사는 조건
-    if (
-      !account
-        .map((coin) => coin.currency)
-        .includes(coin.market.split('-')[1]) &&
-      buyCondition(candles)
-    ) {
-      coin.status = 'buy';
-    }
-
-    //판매 조건
-    if (
-      account
-        .map((coin) => coin.currency)
-        .includes(coin.market.split('-')[1]) &&
-      sellCondition(candles)
-    ) {
-      coin.status = 'sell';
+    if (buyCondition(candles)) {
+      if (
+        !account
+          .map((coin) => coin.currency)
+          .includes(coin.market.split('-')[1])
+      )
+        coin.status = 'buy';
+    } else {
+      if (
+        account
+          .map((coin) => coin.currency)
+          .includes(coin.market.split('-')[1]) &&
+        sellCondition(candles)
+      ) {
+        coin.status = 'sell';
+      }
     }
   } catch (error) {
     console.log(error);
@@ -44,7 +43,7 @@ const buyCondition = (candles: Candle[]) => {
     }, 0) / 20
   );
 
-  const expectedBuyPrice = ma20 + standardDeviation * 4;
+  const expectedBuyPrice = ma20 + standardDeviation * 4.5;
   const expectedMa20 =
     tradePrices.slice(0, 19).reduce((prev, curr) => {
       return (prev += curr);
@@ -54,7 +53,7 @@ const buyCondition = (candles: Candle[]) => {
       return (prev += curr);
     }, expectedBuyPrice) / 60;
 
-  return !(ma20 > ma60) && expectedMa20 > expectedMa60 && ma20 < expectedMa20;
+  return !(ma20 > ma60) && expectedMa20 > expectedMa60;
 };
 
 const sellCondition = (candles: Candle[]) => {

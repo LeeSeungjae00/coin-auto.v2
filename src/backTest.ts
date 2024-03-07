@@ -103,13 +103,16 @@ class CoinAnalyzer {
       strategy(account, market, analyzedCandles);
 
       if (market.status === 'buy') {
-        // console.log(
-        //   `매수 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price}`
-        // );
-        this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()]
-          ? ++this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()]
-          : (this.dateMap[analyzedCandles[0].candle_date_time_kst.toString()] =
-              1);
+        console.log(
+          `매수 | ${analyzedCandles[0].candle_date_time_kst.toISOString()} | ${analyzedCandles[0].trade_price}`
+        );
+        this.dateMap[analyzedCandles[0].candle_date_time_kst.toISOString()]
+          ? ++this.dateMap[
+              analyzedCandles[0].candle_date_time_kst.toISOString()
+            ]
+          : (this.dateMap[
+              analyzedCandles[0].candle_date_time_kst.toISOString()
+            ] = 1);
 
         const balance = (
           (result * 0.99995) /
@@ -133,9 +136,9 @@ class CoinAnalyzer {
           this.tradeCount++;
           const profit =
             Number(sellCoin.balance) * analyzedCandles[0].trade_price * 0.9995;
-          // console.log(
-          //   `매도 | ${analyzedCandles[0].candle_date_time_kst} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((analyzedCandles[0].trade_price - Number(sellCoin.avg_buy_price)) / Number(sellCoin.avg_buy_price)) * 100).toFixed(2)}%`
-          // );
+          console.log(
+            `매도 | ${analyzedCandles[0].candle_date_time_kst.toISOString()} | ${analyzedCandles[0].trade_price} | ${profit} | ${(((analyzedCandles[0].trade_price - Number(sellCoin.avg_buy_price)) / Number(sellCoin.avg_buy_price)) * 100).toFixed(2)}%`
+          );
           result += profit;
           if (analyzedCandles[0].trade_price > Number(sellCoin.avg_buy_price)) {
             this.windLoss.push('win');
