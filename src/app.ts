@@ -24,11 +24,14 @@ const mainCron = new CronJob(
   true
 );
 
+const blockedCoin = ['KRW-PDA'];
+
 const main = async () => {
   try {
     const account = await getAccount();
     const market: CoinNavigator[] = (await getMarkets())
       .filter((coin) => coin.market.includes('KRW-'))
+      .filter((coin) => !blockedCoin.includes(coin.market))
       .map((val) => ({ ...val, status: 'hold' }));
 
     await slackSend('=====시 작=====');
