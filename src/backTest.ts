@@ -21,39 +21,47 @@ class CoinAnalyzer {
   private tradeCount = 0;
 
   async main() {
-    const markets = (await getMarkets())
-      .filter((market) => market.market.includes('KRW-'))
-      .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
+    // const markets = (await getMarkets())
+    //   .filter((market) => market.market.includes('KRW-'))
+    //   .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
-    console.log(markets.length, '개의 코인을 분석합니다.');
+    // console.log(markets.length, '개의 코인을 분석합니다.');
 
-    for (const market of markets) {
-      const from = new Date(this.startDate);
-      const to = new Date(this.endDate);
-      this.TOTAL += await this.backtest(market, from, to);
-    }
+    // for (const market of markets) {
+    //   const from = new Date(this.startDate);
+    //   const to = new Date(this.endDate);
+    //   this.TOTAL += await this.backtest(market, from, to);
+    // }
 
-    const rate = (
-      (this.windLoss.filter((val) => val === 'win').length /
-        this.windLoss.length) *
-      100
-    ).toFixed(0);
-    const result = {
-      승률: `${rate}%`,
-      잔고: this.TOTAL,
-      손익:
-        ((this.TOTAL / (markets.length * this.CAPITAL)) * 100).toFixed(2) + '%',
-    };
+    // const rate = (
+    //   (this.windLoss.filter((val) => val === 'win').length /
+    //     this.windLoss.length) *
+    //   100
+    // ).toFixed(0);
+    // const result = {
+    //   승률: `${rate}%`,
+    //   잔고: this.TOTAL,
+    //   손익:
+    //     ((this.TOTAL / (markets.length * this.CAPITAL)) * 100).toFixed(2) + '%',
+    // };
 
-    console.table(result);
-    console.table({
-      최대구매: Object.keys(this.dateMap)
-        .map((val) => ({ date: val, count: this.dateMap[val] }))
-        .sort((a, b) => b.count - a.count)[0],
-      매도횟수: this.tradeCount,
-    });
-    const str = this.getTable(result);
-    slackSend(str, '#backtest');
+    // console.table(result);
+    // console.table({
+    //   최대구매: Object.keys(this.dateMap)
+    //     .map((val) => ({ date: val, count: this.dateMap[val] }))
+    //     .sort((a, b) => b.count - a.count)[0],
+    //   매도횟수: this.tradeCount,
+    // });
+    // const str = this.getTable(result);
+    // slackSend(str, '#backtest');
+
+    const account = await getAccount();
+
+    const totalcapital = account.reduce((prev, curr) => {
+      if (curr.currency === 'KRW') return (prev += Number(curr.balance));
+      return (prev += Number(curr.balance) * Number(curr.avg_buy_price));
+    }, 0);
+    console.log(totalcapital / 85);
   }
 
   private async getDBCandles(market: string) {
