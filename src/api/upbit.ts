@@ -29,16 +29,19 @@ export const getMarkets = (): Promise<Market[]> => {
     .catch((e) => logger.error(e));
 };
 
-export const getCandles = (params: {
-  market: string;
-  count: number;
-  to?: string;
-}): Promise<Candle[]> => {
+export const getCandles = (
+  params: {
+    market: string;
+    count: number;
+    to?: string;
+  },
+  unit: number = 60
+): Promise<Candle[]> => {
   const config = {
     params,
   };
 
-  return upbitAPIClient.get(GET_CANDLE_LIST, config).then((res) => {
+  return upbitAPIClient.get(`${GET_CANDLE_LIST}${unit}`, config).then((res) => {
     return res.data;
   });
 };

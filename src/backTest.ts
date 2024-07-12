@@ -15,53 +15,53 @@ class CoinAnalyzer {
   private TOTAL = 0;
   private CAPITAL = 10000;
   private windLoss: ('win' | 'lose')[] = [];
-  private startDate = new Date('2024-02-26T08:00:00');
+  private startDate = new Date('2022-02-26T08:00:00');
   private endDate = new Date('2024-02-27T09:00:00');
   private dateMap: { [key: string]: number } = {};
   private tradeCount = 0;
 
   async main() {
-    // const markets = (await getMarkets())
-    //   .filter((market) => market.market.includes('KRW-'))
-    //   .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
+    const markets = (await getMarkets())
+      .filter((market) => market.market.includes('KRW-'))
+      .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
-    // console.log(markets.length, '개의 코인을 분석합니다.');
+    console.log(markets.length, '개의 코인을 분석합니다.');
 
-    // for (const market of markets) {
-    //   const from = new Date(this.startDate);
-    //   const to = new Date(this.endDate);
-    //   this.TOTAL += await this.backtest(market, from, to);
-    // }
+    for (const market of markets) {
+      const from = new Date(this.startDate);
+      const to = new Date(this.endDate);
+      this.TOTAL += await this.backtest(market, from, to);
+    }
 
-    // const rate = (
-    //   (this.windLoss.filter((val) => val === 'win').length /
-    //     this.windLoss.length) *
-    //   100
-    // ).toFixed(0);
-    // const result = {
-    //   승률: `${rate}%`,
-    //   잔고: this.TOTAL,
-    //   손익:
-    //     ((this.TOTAL / (markets.length * this.CAPITAL)) * 100).toFixed(2) + '%',
-    // };
+    const rate = (
+      (this.windLoss.filter((val) => val === 'win').length /
+        this.windLoss.length) *
+      100
+    ).toFixed(0);
+    const result = {
+      승률: `${rate}%`,
+      잔고: this.TOTAL,
+      손익:
+        ((this.TOTAL / (markets.length * this.CAPITAL)) * 100).toFixed(2) + '%',
+    };
 
-    // console.table(result);
-    // console.table({
-    //   최대구매: Object.keys(this.dateMap)
-    //     .map((val) => ({ date: val, count: this.dateMap[val] }))
-    //     .sort((a, b) => b.count - a.count)[0],
-    //   매도횟수: this.tradeCount,
-    // });
-    // const str = this.getTable(result);
-    // slackSend(str, '#backtest');
+    console.table(result);
+    console.table({
+      최대구매: Object.keys(this.dateMap)
+        .map((val) => ({ date: val, count: this.dateMap[val] }))
+        .sort((a, b) => b.count - a.count)[0],
+      매도횟수: this.tradeCount,
+    });
+    const str = this.getTable(result);
+    slackSend(str, '#backtest');
 
-    const account = await getAccount();
+    // const account = await getAccount();
 
-    const totalcapital = account.reduce((prev, curr) => {
-      if (curr.currency === 'KRW') return (prev += Number(curr.balance));
-      return (prev += Number(curr.balance) * Number(curr.avg_buy_price));
-    }, 0);
-    console.log(totalcapital / 85);
+    // const totalcapital = account.reduce((prev, curr) => {
+    //   if (curr.currency === 'KRW') return (prev += Number(curr.balance));
+    //   return (prev += Number(curr.balance) * Number(curr.avg_buy_price));
+    // }, 0);
+    // console.log(totalcapital / 85);
   }
 
   private async getDBCandles(market: string) {
@@ -79,15 +79,23 @@ class CoinAnalyzer {
     return candles;
   }
 
-  private async getRangeCandles(from: Date, to: Date, market: string) {
+  private async getRangeCandles(
+    from: Date,
+    to: Date,
+    market: string,
+    unit: number = 60
+  ) {
     let result: Candle[] = [];
 
     while (to >= from) {
-      const candles = await getCandles({
-        market,
-        count: 200,
-        to: to.toISOString(),
-      });
+      const candles = await getCandles(
+        {
+          market,
+          count: 200,
+          to: to.toISOString(),
+        },
+        unit
+      );
       to.setHours(to.getHours() - 200);
       await sleep(300);
       result = [...result, ...candles];
@@ -180,7 +188,42 @@ class CoinAnalyzer {
     this.stdout.table(data);
     return (this.ts.read() || '').toString();
   }
+
+  async pushData() {
+    const markets = (await getMarkets())
+      .filter((market) => market.market.includes('KRW-'))
+      .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
+
+    for (const market of markets) {
+      const startDate = new Date(this.startDate);
+      const endDate = new Date(this.endDate);
+      const data = await this.getRangeCandles(
+        startDate,
+        endDate,
+        market.market,
+        15
+      );
+
+      for (const candle of data) {
+        prisma.candle.create({
+          data: {
+            market: market.market,
+            candle_date_time_kst: new Date(candle.candle_date_time_kst),
+            trade_price: candle.trade_price,
+            candle_unit: 'M15',
+            candle_acc_trade_volume: candle.candle_acc_trade_volume,
+            high_price: candle.high_price,
+            low_price: candle.low_price,
+            opening_price: candle.opening_price,
+          },
+        });
+      }
+
+      console.log(data);
+    }
+  }
 }
 
 const coinAnalyzer = new CoinAnalyzer();
-coinAnalyzer.main();
+coinAnalyzer.pushData();
+// coinAnalyzer.main();
