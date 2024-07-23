@@ -5,7 +5,7 @@ import { strategy } from './service/coinStrategy';
 import { slackSend } from './utils/slack';
 import { sleep } from './utils/sleep';
 import { Console } from 'node:console';
-import { PrismaClient } from '@prisma/client';
+import { candle_candle_unit, PrismaClient } from '@prisma/client';
 import { getRsi } from './service/rsi';
 import { getMALine } from './service/maLine';
 
@@ -15,11 +15,12 @@ class CoinAnalyzer {
   private TOTAL = 7000000;
   private CAPITAL = 7000000;
   private windLoss: ('win' | 'lose')[] = [];
-  private startDate = new Date('2023-02-26T08:00:00');
-  private endDate = new Date('2024-02-27T09:00:00');
+  private startDate = new Date('2022-07-18T12:00:00');
+  private endDate = new Date('2024-07-18T12:00:00');
   private dateMap: { [key: string]: number } = {};
   private tradeCount = 0;
   private coinCandles: { [key: string]: Candle[] } = {};
+  private coinDayCandles: { [key: string]: Candle[] } = {};
 
   async main() {
     const markets = (await getMarkets())
@@ -30,6 +31,11 @@ class CoinAnalyzer {
 
     for (const market of markets) {
       this.coinCandles[market.market] = await this.getDBCandles(market.market);
+      this.coinDayCandles[market.market] = await this.getDBCandles(
+        market.market,
+        ''
+      );
+      console.log(market);
     }
 
     this.backtest();
@@ -37,7 +43,7 @@ class CoinAnalyzer {
     console.log(this.TOTAL);
   }
 
-  private async getDBCandles(market: string) {
+  private async getDBCandles(market: string, unit: candle_candle_unit = 'M60') {
     const candles = await prisma.candle.findMany({
       orderBy: [
         {
@@ -50,6 +56,7 @@ class CoinAnalyzer {
           gte: this.startDate,
           lte: this.endDate,
         },
+        candle_unit: unit,
       },
     });
 

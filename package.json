@@ -10,7 +10,7 @@
     "build": "tsc",
     "start": "node ./bin/app.js",
     "dev": "ts-node ./src/app.ts",
-    "backtest": "ts-node ./src/backtest.ts"
+    "backtest": "ts-node ./src/parallelBackTesting.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",

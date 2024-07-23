@@ -31,4 +31,5 @@ export interface Candle {
 
 export interface CoinNavigator extends Market {
   status: 'buy' | 'sell' | 'hold';
+  score?: number;
 }
