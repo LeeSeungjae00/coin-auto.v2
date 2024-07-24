@@ -11,6 +11,7 @@ model candle {
   candle_date_time_kst    DateTime           @db.DateTime(6)
   candle_unit             candle_candle_unit
   market                  String             @db.VarChar(255)
+  candle_acc_trade_price  Float
   candle_acc_trade_volume Float
   high_price              Float
   low_price               Float
@@ -25,4 +26,5 @@ enum candle_candle_unit {
   M30
   M15
   M3
+  DAY
 }

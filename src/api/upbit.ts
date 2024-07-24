@@ -6,6 +6,7 @@ import {
   GET_ACCOUNT,
   GET_CANDLE_LIST,
   GET_COIN_LIST,
+  GET_DAY_CANDLE_LIST,
   POST_OERDER_COIN as POST_ORDER_COIN,
 } from './routes';
 import upbitAPIClient from './upbitClient';
@@ -42,6 +43,20 @@ export const getCandles = (
   };
 
   return upbitAPIClient.get(`${GET_CANDLE_LIST}${unit}`, config).then((res) => {
+    return res.data;
+  });
+};
+
+export const getDayCandles = (params: {
+  market: string;
+  count: number;
+  to?: string;
+}): Promise<Candle[]> => {
+  const config = {
+    params,
+  };
+
+  return upbitAPIClient.get(`${GET_DAY_CANDLE_LIST}`, config).then((res) => {
     return res.data;
   });
 };
