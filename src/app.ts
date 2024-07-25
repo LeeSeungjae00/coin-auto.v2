@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import dotenv from 'dotenv';
 import logger from './loaders/logger';
-import { getAccount, getCandles, getMarkets } from './api/upbit';
+import { getAccount, getCandles, getDayCandles, getMarkets } from './api/upbit';
 import { sleep } from './utils/sleep';
 import { CoinNavigator } from './interface/upbit';
 import { strategy } from './service/coinStrategy';
@@ -43,7 +43,12 @@ const main = async () => {
         market: coin.market,
         to: date.toISOString(),
       });
-      await strategy(account, coin, candles);
+      const dayCandles = await getDayCandles({
+        count: 200,
+        market: coin.market,
+        to: date.toISOString(),
+      });
+      await strategy(account, coin, candles, dayCandles);
       await sleep(100);
     }
     await sell(market, account);

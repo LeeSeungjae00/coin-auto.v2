@@ -200,7 +200,7 @@ class CoinAnalyzer {
           const count = parseFloat(account[findIndex].balance);
           account.splice(findIndex, 1);
           this.TOTAL += count * price;
-          console.log('sell', coin.market, count, price);
+          console.log(this.startDate, '| sell', coin.market, count, price);
           console.log(
             'total',
             this.TOTAL,
@@ -229,7 +229,7 @@ class CoinAnalyzer {
             avg_buy_price_modified: false,
             unit_currency: 'KRW',
           });
-          console.log('buy', coin.market, count, price);
+          console.log(this.startDate, '| buy', coin.market, count, price);
         }
       });
 
