@@ -6,10 +6,21 @@ import { getMALine } from './maLine';
 import { getRsi } from './rsi';
 
 export const getScore = (candles: Candle[]) => {
-  const maxPrice = Math.max(
-    ...candles.map((candle) => candle.candle_acc_trade_volume)
-  );
-  return (candles[0].trade_price - maxPrice) / maxPrice;
+  const tempCandles = [...candles];
+  const nowTradePrice = candles[0].trade_price;
+  const maxPrice = tempCandles.sort((a, b) => {
+    if (a.candle_acc_trade_volume && b.candle_acc_trade_volume) {
+      return b.candle_acc_trade_volume - a.candle_acc_trade_volume;
+    } else if (a.candle_acc_trade_volume) {
+      return -1;
+    } else if (b.candle_acc_trade_volume) {
+      return 1;
+    } else {
+      return 0;
+    }
+  })[0].trade_price;
+
+  return (nowTradePrice - maxPrice) / maxPrice;
 };
 
 export const getDayScore = (candles: Candle[]) => {

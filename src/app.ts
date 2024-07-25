@@ -24,7 +24,7 @@ const mainCron = new CronJob(
   true
 );
 
-const blockedCoin = ['KRW-PDA'];
+export const blockedCoin = ['KRW-PDA'];
 
 const main = async () => {
   try {

@@ -15,21 +15,24 @@ class CoinAnalyzer {
   private TOTAL = 7000000;
   private CAPITAL = 7000000;
   private windLoss: ('win' | 'lose')[] = [];
-  private startDate = new Date('2024-03-18T08:00:00');
+  private startDate = new Date('2022-07-18T08:00:00');
   private endDate = new Date('2024-07-18T12:00:00');
   private dateMap: { [key: string]: number } = {};
   private tradeCount = 0;
   private coinCandles: { [key: string]: Candle[] } = {};
   private coinDayCandles: { [key: string]: Candle[] } = {};
+  private account: Account[] = [];
 
   async main() {
-    const markets = (await getMarkets())
+    let markets = (await getMarkets())
       .filter((market) => market.market.includes('KRW-'))
       .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
+    // markets = markets.filter((market, index) => index < 20);
+
     console.log(markets.length, '개의 코인을 분석합니다.');
 
-    for (const market of markets) {
+    for (const [index, market] of markets.entries()) {
       this.coinCandles[market.market] = await this.getDBCandles(
         market.market,
         'M60',
@@ -42,12 +45,21 @@ class CoinAnalyzer {
         this.startDate,
         this.endDate
       );
+
+      console.log(`${markets.length}개 중 ${index + 1}`);
       console.log(market);
     }
 
     this.backtest();
 
-    console.log(this.TOTAL);
+    console.log(
+      '잔고',
+      this.account.reduce((prev, curr) => {
+        prev += parseFloat(curr.balance) * parseFloat(curr.avg_buy_price);
+        return prev;
+      }, 0)
+    );
+    console.log('현금', this.TOTAL);
   }
 
   private async getDBCandles(
@@ -119,9 +131,11 @@ class CoinAnalyzer {
   }
 
   private async backtest() {
-    const account: Account[] = [];
+    const account: Account[] = this.account;
     let result = this.CAPITAL;
     while (this.endDate >= this.startDate) {
+      const coinNavigators: CoinNavigator[] = [];
+      const nowPrice: { [key: string]: number } = {};
       Object.keys(this.coinCandles).forEach(async (market) => {
         const findIndex = this.coinCandles[market].findIndex(
           (val) =>
@@ -134,19 +148,6 @@ class CoinAnalyzer {
         );
 
         const dayIndex = this.coinDayCandles[market].findIndex((val) => {
-          console.log(
-            val.candle_date_time_kst.getDate(),
-            this.startDate.getDate()
-          );
-          console.log(
-            val.candle_date_time_kst.getMonth(),
-            this.startDate.getMonth()
-          );
-          console.log(
-            val.candle_date_time_kst.getFullYear(),
-            this.startDate.getFullYear()
-          );
-
           return (
             val.candle_date_time_kst.getDate() === this.startDate.getDate() &&
             val.candle_date_time_kst.getMonth() === this.startDate.getMonth() &&
@@ -155,8 +156,8 @@ class CoinAnalyzer {
           );
         });
         const dayCandles = this.coinDayCandles[market].slice(
-          dayIndex - 200 < 0 ? 0 : dayIndex - 200,
-          dayIndex
+          dayIndex,
+          dayIndex + 200
         );
 
         if (findIndex === -1) return;
@@ -171,65 +172,69 @@ class CoinAnalyzer {
           english_name: market,
           status: 'hold',
         };
+        nowPrice[market] = candles[0].trade_price;
         strategy(account, coinNavigator, candles, dayCandles);
+        coinNavigators.push(coinNavigator);
+      });
 
-        if (coinNavigator.status === 'sell') {
-          console.log(
-            `매도 | ${candles[0].candle_date_time_kst.toISOString()} | ${candles[0].trade_price}`
-          );
-          const coin = account.find(
-            (val) => val.currency === market.split('-')[1]
-          );
-          account.splice(
-            account.findIndex((val) => val.currency === market.split('-')[1]),
-            1
-          );
-
-          if (coin)
-            this.TOTAL += Number(coin.balance) * Number(candles[0].trade_price);
+      coinNavigators.sort((a, b) => {
+        if (a.score && b.score) {
+          return b.score - a.score;
+        } else if (a.score) {
+          return -1;
+        } else if (b.score) {
+          return 1;
+        } else {
+          return 0;
         }
-        if (coinNavigator.status === 'buy') {
-          if (account.length > 84) return;
-          console.log(
-            `매수 | ${candles[0].candle_date_time_kst.toISOString()} | ${candles[0].trade_price}`
-          );
-          const balance = (
-            ((this.TOTAL / (85 - account.length)) * 0.99995) /
-            (candles[0].trade_price || 0)
-          ).toString();
-          this.TOTAL -= this.TOTAL / (85 - account.length);
+      });
 
-          console.log(
-            this.TOTAL,
-            balance,
-            account.length,
-            account.reduce(
-              (prev, curr) =>
-                prev + Number(curr.balance) * Number(curr.avg_buy_price),
-              0
-            )
+      coinNavigators.forEach((coin) => {
+        if (coin.status === 'sell') {
+          const price = nowPrice[coin.market];
+          const findIndex = account.findIndex(
+            (val) => val.currency === coin.market.split('-')[1]
           );
+          if (findIndex === -1) return;
+
+          const count = parseFloat(account[findIndex].balance);
+          account.splice(findIndex, 1);
+          this.TOTAL += count * price;
+          console.log('sell', coin.market, count, price);
+          console.log(
+            'total',
+            this.TOTAL,
+            account.reduce((prev, curr) => {
+              prev +=
+                parseFloat(curr.balance) * nowPrice[`KRW-${curr.currency}`];
+              return prev;
+            }, 0)
+          );
+        }
+      });
+
+      coinNavigators.slice(0, 8).forEach((coin) => {
+        if (coin.status === 'buy') {
+          if (account.length >= 8) return;
+
+          const price = nowPrice[coin.market];
+          const count = (this.TOTAL * 0.9995) / (8 - account.length) / price;
+          this.TOTAL -= count * price + 0.0005 * count * price;
 
           account.push({
-            currency: market.split('-')[1],
-            balance: balance,
-            locked: '0',
-            avg_buy_price: (candles[0].trade_price || 0).toString(),
+            currency: coin.market.split('-')[1],
+            balance: count.toString(),
+            locked: '',
+            avg_buy_price: price.toString(),
             avg_buy_price_modified: false,
             unit_currency: 'KRW',
           });
+          console.log('buy', coin.market, count, price);
         }
       });
+
       this.startDate.setHours(this.startDate.getHours() + 1);
     }
-
-    console.log(
-      account.reduce(
-        (prev, curr) =>
-          prev + Number(curr.balance) * Number(curr.avg_buy_price),
-        0
-      )
-    );
     return result;
   }
 
