@@ -25,19 +25,39 @@ drawdown = (amount - cum_max) / cum_max
 
 # 최대 낙폭(MDD)
 mdd = drawdown.min()
+mdd_date = drawdown.idxmin()
+mdd_value = drawdown.loc[mdd_date]
+
+# 최대 금액
+max_amount = amount.max()
+max_amount_date = amount.idxmax()
+
+# 처음과 마지막 금액
+initial_amount = amount.iloc[0]
+final_amount = amount.iloc[-1]
+
+# 전체 상승률(%)
+percentage_change = ((final_amount - initial_amount) / initial_amount) * 100
 
 # 금액 차트 그리기
-plt.figure(figsize=(14, 7))
+plt.figure(figsize=(12, 8))  # 화면 크기 줄임
+
+# 금액 차트
 plt.subplot(2, 1, 1)
 plt.plot(amount, label='금액')
+plt.scatter(max_amount_date, max_amount, color='green', zorder=5, label=f'최대 금액: {max_amount:.2f}')
 plt.title('금액 변화')
 plt.legend(loc='best')
 
-# MDD 차트 그리기
+# MDD 차트
 plt.subplot(2, 1, 2)
 plt.plot(drawdown, label='MDD', color='red')
+plt.scatter(mdd_date, mdd_value, color='blue', zorder=5, label=f'최대 낙폭 (MDD): {mdd_value:.2%}')
 plt.title('Maximum Drawdown (MDD)')
 plt.legend(loc='best')
 
-plt.tight_layout()
+# 전체 상승률 표시
+plt.suptitle(f'전체 상승률: {percentage_change:.2f}%', fontsize=14)
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout to fit title
 plt.show()

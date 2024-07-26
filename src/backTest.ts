@@ -50,8 +50,8 @@ function findClosestDateTime(dates: Date[], targetDateTime: Date): Date | null {
 const prisma = new PrismaClient();
 
 class CoinAnalyzer {
-  private TOTAL = 7000000;
-  private CAPITAL = 7000000;
+  private TOTAL = 10000000;
+  private CAPITAL = 10000000;
   private windLoss: ('win' | 'lose')[] = [];
   private startDate = new Date('2022-07-18T08:00:00');
   private endDate = new Date('2024-07-18T12:00:00');
@@ -315,19 +315,14 @@ class CoinAnalyzer {
         }
       });
 
+      const total = account.reduce((prev, curr) => {
+        prev +=
+          parseFloat(curr.balance) *
+          (nowPrice[`KRW-${curr.currency}`] || parseFloat(curr.avg_buy_price));
+        return prev;
+      }, this.TOTAL);
       console.log(
-        `날짜: ${this.startDate} | 총 자산: ${
-          this.TOTAL +
-          account.reduce((prev, curr) => {
-            if (nowPrice[`KRW-${curr.currency}`] === undefined)
-              console.log(curr.currency, this.startDate);
-            prev +=
-              parseFloat(curr.balance) *
-              (nowPrice[`KRW-${curr.currency}`] ||
-                parseFloat(curr.avg_buy_price));
-            return prev;
-          }, 0)
-        }`
+        `날짜: ${this.startDate} | 총 자산: ${total} | 수익률 ${((total / this.CAPITAL) * 100).toFixed(2)}%`
       );
       writeStream.write(
         `${this.startDate.toISOString()},${

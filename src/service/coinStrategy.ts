@@ -145,7 +145,12 @@ const sellCondition = (candles: Candle[]) => {
       return (prev += curr);
     }, expectedPrice) / 60;
 
+  const maxVolume = Math.max(
+    ...candles.map((val) => val.candle_acc_trade_volume)
+  );
+
   return (
+    candles[0].candle_acc_trade_volume === maxVolume ||
     tradePrices[0] > Math.max(maShort * 1.08, bolingerUpper) ||
     tradePrices[0] < Math.min(maShort * 0.92, bolingerLower) ||
     !(expectedMaShort > expectedMaLong)
