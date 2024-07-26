@@ -59,7 +59,7 @@ export const strategy = async (
       }
     }
   } catch (error) {
-    console.log(error);
+    // console.log(coin.market, candles.length, error);
   }
 };
 

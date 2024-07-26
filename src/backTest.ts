@@ -8,6 +8,11 @@ import { Console } from 'node:console';
 import { candle, candle_candle_unit, PrismaClient } from '@prisma/client';
 import { getRsi } from './service/rsi';
 import { getMALine } from './service/maLine';
+import fs from 'fs';
+import path from 'path';
+
+const filename = 'data.csv';
+const filePath = path.join(__dirname, filename);
 
 function findClosestDateTime(dates: Date[], targetDateTime: Date): Date | null {
   // targetDateTime을 Date 객체로 변환
@@ -55,7 +60,7 @@ class CoinAnalyzer {
       .filter((market) => market.market.includes('KRW-'))
       .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
-    // markets = markets.filter((market, index) => index < 20);
+    // markets = markets.filter((market, index) => index % 2 === 0);
 
     console.log(markets.length, '개의 코인을 분석합니다.');
 
@@ -178,6 +183,8 @@ class CoinAnalyzer {
   }
 
   private async backtest() {
+    const writeStream = fs.createWriteStream(filePath, { flags: 'a' });
+    writeStream.write('날짜,금액\n');
     const account: Account[] = this.account;
     let result = this.CAPITAL;
     while (this.endDate >= this.startDate) {
@@ -289,15 +296,41 @@ class CoinAnalyzer {
       console.log(
         `날짜: ${this.startDate} | 총 자산: ${this.TOTAL} | ${account.reduce(
           (prev, curr) => {
-            prev += parseFloat(curr.balance) * nowPrice[`KRW-${curr.currency}`];
+            if (nowPrice[`KRW-${curr.currency}`] === undefined)
+              console.log(curr.currency, this.startDate);
+            prev +=
+              parseFloat(curr.balance) *
+              (nowPrice[`KRW-${curr.currency}`] ||
+                parseFloat(curr.avg_buy_price));
             return prev;
           },
           0
         )}`
       );
+      writeStream.write(
+        `${this.startDate.toISOString()},${
+          this.TOTAL +
+          account.reduce((prev, curr) => {
+            if (nowPrice[`KRW-${curr.currency}`] === undefined)
+              console.log(curr.currency, this.startDate);
+            prev +=
+              parseFloat(curr.balance) *
+              (nowPrice[`KRW-${curr.currency}`] ||
+                parseFloat(curr.avg_buy_price));
+            return prev;
+          }, 0)
+        }\n`
+      );
       console.table(account);
       this.startDate.setHours(this.startDate.getHours() + 1);
     }
+    writeStream.end();
+    writeStream.on('finish', () => {
+      console.log('All rows appended to file');
+    });
+    writeStream.on('error', (err) => {
+      console.error('Error writing to file', err);
+    });
     return result;
   }
 
