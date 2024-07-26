@@ -1,9 +1,8 @@
 {
-  "name": "CLOUDXPM-ADB-SCHEDCULER",
+  "name": "auto-coin",
   "version": "1.0.0",
-  "description": "CLOUDXPM 1초마다 adb device 상태 확인",
+  "description": "코인 자동매매",
   "main": "src/app.ts",
-  "repository": "https://github.com/cloudxdn/CLOUDXPM-ADB-SCHEDCULERhttps://github.com/cloudxdn/CLOUDXPM-ADB-SCHEDCULER",
   "author": "lsj",
   "license": "MIT",
   "scripts": {
