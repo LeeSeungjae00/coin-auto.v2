@@ -43,6 +43,7 @@ const main = async () => {
         market: coin.market,
         to: date.toISOString(),
       });
+      await sleep(100);
       const dayCandles = await getDayCandles({
         count: 200,
         market: coin.market,
