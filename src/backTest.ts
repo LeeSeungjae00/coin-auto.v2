@@ -9,6 +9,33 @@ import { candle, candle_candle_unit, PrismaClient } from '@prisma/client';
 import { getRsi } from './service/rsi';
 import { getMALine } from './service/maLine';
 
+function findClosestDateTime(dates: Date[], targetDateTime: Date): Date | null {
+  // targetDateTime을 Date 객체로 변환
+  const target: Date = targetDateTime;
+
+  // 초기값 설정
+  let closestDateTime: Date | null = null;
+  let closestDiff: number = Infinity;
+
+  // 날짜 배열 순회
+  for (const dateTimeStr of dates) {
+    const dateTime: Date = dateTimeStr;
+
+    // targetDateTime보다 작은 날짜만 고려
+    if (dateTime <= target) {
+      const diff: number = target.getTime() - dateTime.getTime();
+
+      // 가장 작은 차이를 가지는 날짜 찾기
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestDateTime = dateTime;
+      }
+    }
+  }
+
+  return closestDateTime ? closestDateTime : null;
+}
+
 const prisma = new PrismaClient();
 
 class CoinAnalyzer {
@@ -39,11 +66,10 @@ class CoinAnalyzer {
         this.startDate,
         this.endDate
       );
-      this.coinDayCandles[market.market] = await this.getDBCandles(
+      this.coinDayCandles[market.market] = await this.getDBLimitCandles(
         market.market,
         'DAY',
-        this.startDate,
-        this.endDate
+        800
       );
 
       console.log(`${markets.length}개 중 ${index + 1}`);
@@ -60,6 +86,27 @@ class CoinAnalyzer {
       }, 0)
     );
     console.log('현금', this.TOTAL);
+  }
+
+  private async getDBLimitCandles(
+    market: string,
+    unit: candle_candle_unit,
+    limit: number
+  ) {
+    const candles = await prisma.candle.findMany({
+      orderBy: [
+        {
+          candle_date_time_kst: 'desc',
+        },
+      ],
+      where: {
+        market: market,
+        candle_unit: unit,
+      },
+      take: limit,
+    });
+
+    return candles;
   }
 
   private async getDBCandles(
@@ -147,12 +194,18 @@ class CoinAnalyzer {
           findIndex + 200
         );
 
+        const findDate = findClosestDateTime(
+          this.coinDayCandles[market].map((val) => val.candle_date_time_kst),
+          this.startDate
+        );
+
         const dayIndex = this.coinDayCandles[market].findIndex((val) => {
           return (
-            val.candle_date_time_kst.getDate() === this.startDate.getDate() &&
-            val.candle_date_time_kst.getMonth() === this.startDate.getMonth() &&
-            val.candle_date_time_kst.getFullYear() ===
-              this.startDate.getFullYear()
+            // val.candle_date_time_kst.getDate() === this.startDate.getDate() &&
+            // val.candle_date_time_kst.getMonth() === this.startDate.getMonth() &&
+            // val.candle_date_time_kst.getFullYear() ===
+            //   this.startDate.getFullYear()
+            val.candle_date_time_kst.getTime() === findDate?.getTime()
           );
         });
         const dayCandles = this.coinDayCandles[market].slice(
@@ -161,6 +214,7 @@ class CoinAnalyzer {
         );
 
         if (findIndex === -1) return;
+        nowPrice[market] = candles[0].trade_price;
         if (findIndex - 200 < 0) return;
         if (dayIndex === -1) return;
         // if (dayIndex - 200 < 0) return;
@@ -172,7 +226,6 @@ class CoinAnalyzer {
           english_name: market,
           status: 'hold',
         };
-        nowPrice[market] = candles[0].trade_price;
         strategy(account, coinNavigator, candles, dayCandles);
         coinNavigators.push(coinNavigator);
       });
@@ -233,6 +286,16 @@ class CoinAnalyzer {
         }
       });
 
+      console.log(
+        `날짜: ${this.startDate} | 총 자산: ${this.TOTAL} | ${account.reduce(
+          (prev, curr) => {
+            prev += parseFloat(curr.balance) * nowPrice[`KRW-${curr.currency}`];
+            return prev;
+          },
+          0
+        )}`
+      );
+      console.table(account);
       this.startDate.setHours(this.startDate.getHours() + 1);
     }
     return result;
