@@ -10,6 +10,12 @@ import { getRsi } from './service/rsi';
 import { getMALine } from './service/maLine';
 import fs from 'fs';
 import path from 'path';
+import Redis from 'ioredis';
+
+const redis = new Redis({
+  host: 'localhost', // Redis 서버 주소
+  port: 6379, // Redis 서버 포트
+});
 
 const filename = 'data.csv';
 const filePath = path.join(__dirname, filename);
@@ -65,16 +71,13 @@ class CoinAnalyzer {
     console.log(markets.length, '개의 코인을 분석합니다.');
 
     for (const [index, market] of markets.entries()) {
-      this.coinCandles[market.market] = await this.getDBCandles(
+      this.coinCandles[market.market] = await this.getCandlesFromRedis(
         market.market,
-        'M60',
-        this.startDate,
-        this.endDate
+        'M60'
       );
-      this.coinDayCandles[market.market] = await this.getDBLimitCandles(
+      this.coinDayCandles[market.market] = await this.getLimitCandlesFromRedis(
         market.market,
-        'DAY',
-        800
+        'DAY'
       );
 
       console.log(`${markets.length}개 중 ${index + 1}`);
@@ -114,6 +117,56 @@ class CoinAnalyzer {
     return candles;
   }
 
+  async saveCandlesToRedis(
+    market: string,
+    unit: candle_candle_unit,
+    candles: Candle[]
+  ) {
+    const key = `candles:${market}:${unit}`;
+    await redis.set(key, JSON.stringify(candles));
+  }
+
+  async getCandlesFromRedis(
+    market: string,
+    unit: candle_candle_unit
+  ): Promise<Candle[]> {
+    const key = `candles:${market}:${unit}`;
+    const data = await redis.get(key);
+    if (data) {
+      return JSON.parse(data).map((val: any) => ({
+        ...val,
+        candle_date_time_kst: new Date(val.candle_date_time_kst),
+      })) as Candle[];
+    } else {
+      const candles = await this.getDBCandles(
+        market,
+        unit,
+        this.startDate,
+        this.endDate
+      );
+      await this.saveCandlesToRedis(market, unit, candles);
+      return candles;
+    }
+  }
+
+  async getLimitCandlesFromRedis(
+    market: string,
+    unit: candle_candle_unit
+  ): Promise<Candle[]> {
+    const key = `candles:${market}:${unit}`;
+    const data = await redis.get(key);
+    if (data) {
+      return JSON.parse(data).map((val: any) => ({
+        ...val,
+        candle_date_time_kst: new Date(val.candle_date_time_kst),
+      })) as Candle[];
+    } else {
+      const candles = await this.getDBLimitCandles(market, unit, 800);
+      await this.saveCandlesToRedis(market, unit, candles);
+      return candles;
+    }
+  }
+
   private async getDBCandles(
     market: string,
     unit: candle_candle_unit,
@@ -137,31 +190,6 @@ class CoinAnalyzer {
     });
 
     return candles;
-  }
-
-  private async getRangeCandles(
-    from: Date,
-    to: Date,
-    market: string,
-    unit: number = 60
-  ) {
-    let result: Candle[] = [];
-
-    while (to >= from) {
-      const candles = await getCandles(
-        {
-          market,
-          count: 200,
-          to: to.toISOString(),
-        },
-        unit
-      );
-      to.setHours(to.getHours() - 200);
-      await sleep(300);
-      result = [...result, ...candles];
-    }
-
-    return result;
   }
 
   private async getRangeDayCandles(from: Date, to: Date, market: string) {
@@ -207,13 +235,7 @@ class CoinAnalyzer {
         );
 
         const dayIndex = this.coinDayCandles[market].findIndex((val) => {
-          return (
-            // val.candle_date_time_kst.getDate() === this.startDate.getDate() &&
-            // val.candle_date_time_kst.getMonth() === this.startDate.getMonth() &&
-            // val.candle_date_time_kst.getFullYear() ===
-            //   this.startDate.getFullYear()
-            val.candle_date_time_kst.getTime() === findDate?.getTime()
-          );
+          return val.candle_date_time_kst.getTime() === findDate?.getTime();
         });
         const dayCandles = this.coinDayCandles[market].slice(
           dayIndex,
@@ -294,8 +316,9 @@ class CoinAnalyzer {
       });
 
       console.log(
-        `날짜: ${this.startDate} | 총 자산: ${this.TOTAL} | ${account.reduce(
-          (prev, curr) => {
+        `날짜: ${this.startDate} | 총 자산: ${
+          this.TOTAL +
+          account.reduce((prev, curr) => {
             if (nowPrice[`KRW-${curr.currency}`] === undefined)
               console.log(curr.currency, this.startDate);
             prev +=
@@ -303,9 +326,8 @@ class CoinAnalyzer {
               (nowPrice[`KRW-${curr.currency}`] ||
                 parseFloat(curr.avg_buy_price));
             return prev;
-          },
-          0
-        )}`
+          }, 0)
+        }`
       );
       writeStream.write(
         `${this.startDate.toISOString()},${
