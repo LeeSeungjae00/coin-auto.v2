@@ -134,16 +134,17 @@ const sellCondition = (candles: Candle[]) => {
 
   let expectedPrice = maShort + standardDeviation * 10;
 
-  const bolingerUpper = maShort + standardDeviation * 2;
-  const bolingerLower = maShort - standardDeviation * 2;
   const expectedMaShort =
     tradePrices.slice(0, shortValue - 1).reduce((prev, curr) => {
       return (prev += curr);
-    }, expectedPrice) / 20;
+    }, expectedPrice) / shortValue;
   const expectedMaLong =
     tradePrices.slice(0, longValue - 1).reduce((prev, curr) => {
       return (prev += curr);
-    }, expectedPrice) / 60;
+    }, expectedPrice) / longValue;
+
+  const bolingerUpper = maShort + standardDeviation * 2;
+  const bolingerLower = maShort - standardDeviation * 2;
 
   const maxVolume = Math.max(
     ...candles.map((val) => val.candle_acc_trade_volume)
