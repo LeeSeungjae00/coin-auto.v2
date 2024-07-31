@@ -49,6 +49,8 @@ const main = async () => {
         market: coin.market,
         to: date.toISOString(),
       });
+      candles.pop();
+      dayCandles.pop();
       await strategy(account, coin, candles, dayCandles);
       await sleep(100);
     }

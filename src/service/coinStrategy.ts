@@ -5,20 +5,12 @@ import logger from '../loaders/logger';
 import { getMALine } from './maLine';
 import { getRsi } from './rsi';
 
+const shortValue = 20;
+const longValue = 50;
+
 export const getScore = (candles: Candle[]) => {
-  const tempCandles = [...candles];
   const nowTradePrice = candles[0].trade_price;
-  const maxPrice = tempCandles.sort((a, b) => {
-    if (a.candle_acc_trade_volume && b.candle_acc_trade_volume) {
-      return b.candle_acc_trade_volume - a.candle_acc_trade_volume;
-    } else if (a.candle_acc_trade_volume) {
-      return -1;
-    } else if (b.candle_acc_trade_volume) {
-      return 1;
-    } else {
-      return 0;
-    }
-  })[0].trade_price;
+  const maxPrice = Math.max(...candles.map((val) => val.trade_price));
 
   return (nowTradePrice - maxPrice) / maxPrice;
 };
@@ -62,9 +54,6 @@ export const strategy = async (
     // console.log(coin.market, candles.length, error);
   }
 };
-
-const shortValue = 20;
-const longValue = 50;
 
 const buyCondition = (candles: Candle[], dayCandles: Candle[]) => {
   const tradePrices = candles.map((val) => val.trade_price);

@@ -3,7 +3,8 @@ import { Account, CoinNavigator } from '../interface/upbit';
 import logger from '../loaders/logger';
 import { sleep } from '../utils/sleep';
 
-const MAX_BUY_COUNT = 8;
+const MAX_BUY_COUNT = 4;
+const MAX_RANK_COUNT = 12;
 
 export const buy = async (market: CoinNavigator[], account: Account[]) => {
   const totalcapital = account.reduce((prev, curr) => {
@@ -18,7 +19,7 @@ export const buy = async (market: CoinNavigator[], account: Account[]) => {
       const scoreB = b.score || 0;
       return scoreB - scoreA;
     })
-    .splice(0, MAX_BUY_COUNT)
+    .splice(0, MAX_RANK_COUNT)
     .filter((val) => val.status === 'buy')) {
     await postBuyCoin(coin.market, price.toString());
     logger.info(`${coin.market} | ${coin.korean_name} | ${price}원 매수 완료`);
