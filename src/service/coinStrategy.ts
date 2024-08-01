@@ -9,15 +9,18 @@ const shortValue = 20;
 const longValue = 50;
 
 export const getScore = (candles: Candle[]) => {
+  const tempCandles = [...candles];
   const nowTradePrice = candles[0].trade_price;
-  const maxPrice = Math.max(...candles.map((val) => val.trade_price));
+  const maxPrice = tempCandles.sort(
+    (a, b) => b.candle_acc_trade_volume - a.candle_acc_trade_volume
+  )[0].trade_price;
 
   return (nowTradePrice - maxPrice) / maxPrice;
 };
 
 export const getDayScore = (candles: Candle[]) => {
   return (
-    (candles[0].trade_price - candles[0].opening_price) /
+    (candles[0].opening_price - candles[0].trade_price) /
     candles[0].opening_price
   );
 };
@@ -30,6 +33,10 @@ export const strategy = async (
 ) => {
   try {
     coin.status = 'hold';
+
+    const dayScore = getDayScore(dayCandles);
+    const score = getScore(candles);
+
     coin.score = getScore(candles) + getDayScore(dayCandles);
 
     //사는 조건
@@ -101,7 +108,7 @@ const buyCondition = (candles: Candle[], dayCandles: Candle[]) => {
   const hourMaLong = getMALine(hourCandle, 50);
 
   const dayMaShort = getMALine(dayCandles, 5);
-  const dayMaLong = getMALine(dayCandles, 20);
+  const dayMaLong = getMALine(dayCandles, 10);
 
   return (
     maShort < maLong &&
@@ -121,7 +128,7 @@ const sellCondition = (candles: Candle[]) => {
     }, 0) / shortValue
   );
 
-  let expectedPrice = maShort + standardDeviation * 10;
+  const expectedPrice = maShort + standardDeviation * 10;
 
   const expectedMaShort =
     tradePrices.slice(0, shortValue - 1).reduce((prev, curr) => {
@@ -143,6 +150,6 @@ const sellCondition = (candles: Candle[]) => {
     candles[0].candle_acc_trade_volume === maxVolume ||
     tradePrices[0] > Math.max(maShort * 1.08, bolingerUpper) ||
     tradePrices[0] < Math.min(maShort * 0.92, bolingerLower) ||
-    !(expectedMaShort > expectedMaLong)
+    expectedMaShort < expectedMaLong
   );
 };

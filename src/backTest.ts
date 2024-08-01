@@ -20,16 +20,17 @@ const redis = new Redis({
 const filename = 'data.csv';
 const filePath = path.join(__dirname, filename);
 
-function findClosestDateTime(dates: Date[], targetDateTime: Date): Date | null {
+function findClosestDateTimeIndex(dates: Date[], targetDateTime: Date): number {
   // targetDateTime을 Date 객체로 변환
   const target: Date = targetDateTime;
 
   // 초기값 설정
   let closestDateTime: Date | null = null;
   let closestDiff: number = Infinity;
+  let closestIndex: number = -1;
 
   // 날짜 배열 순회
-  for (const dateTimeStr of dates) {
+  for (const [index, dateTimeStr] of dates.entries()) {
     const dateTime: Date = dateTimeStr;
 
     // targetDateTime보다 작은 날짜만 고려
@@ -40,11 +41,12 @@ function findClosestDateTime(dates: Date[], targetDateTime: Date): Date | null {
       if (diff < closestDiff) {
         closestDiff = diff;
         closestDateTime = dateTime;
+        closestIndex = index;
       }
     }
   }
 
-  return closestDateTime ? closestDateTime : null;
+  return closestIndex;
 }
 
 const prisma = new PrismaClient();
@@ -60,10 +62,13 @@ class CoinAnalyzer {
   private coinCandles: { [key: string]: Candle[] } = {};
   private coinDayCandles: { [key: string]: Candle[] } = {};
   private account: Account[] = [];
+  private winCount = 0;
+  private loseCount = 0;
 
   async main() {
     let markets = (await getMarkets())
-      .filter((market) => market.market.includes('KRW-'))
+      .filter((market) => market.market.includes('KRW'))
+      .filter((market) => market.market !== 'KRW-BTT')
       .map((val) => ({ ...val, status: 'hold' }) as CoinNavigator);
 
     // markets = markets.filter((market, index) => index % 2 === 0);
@@ -94,6 +99,7 @@ class CoinAnalyzer {
       }, 0)
     );
     console.log('현금', this.TOTAL);
+    console.log('승률', this.winCount / (this.winCount + this.loseCount));
   }
 
   private async getDBLimitCandles(
@@ -229,17 +235,14 @@ class CoinAnalyzer {
           findIndex + 200
         );
 
-        const findDate = findClosestDateTime(
+        const dayIndex = findClosestDateTimeIndex(
           this.coinDayCandles[market].map((val) => val.candle_date_time_kst),
           this.startDate
         );
 
-        const dayIndex = this.coinDayCandles[market].findIndex((val) => {
-          return val.candle_date_time_kst.getTime() === findDate?.getTime();
-        });
         const dayCandles = this.coinDayCandles[market].slice(
-          dayIndex,
-          dayIndex + 200
+          dayIndex + 2,
+          dayIndex + 200 + 2
         );
 
         if (findIndex === -1) return;
@@ -280,9 +283,32 @@ class CoinAnalyzer {
           if (findIndex === -1) return;
 
           const count = parseFloat(account[findIndex].balance);
+          if (
+            nowPrice[`KRW-${account[findIndex].currency}`] >
+            parseFloat(account[findIndex].avg_buy_price)
+          ) {
+            this.winCount++;
+            console.log(
+              this.startDate,
+              '| sell',
+              coin.market,
+              count,
+              price,
+              'win'
+            );
+          } else {
+            this.loseCount++;
+            console.log(
+              this.startDate,
+              '| sell',
+              coin.market,
+              count,
+              price,
+              'lose'
+            );
+          }
           account.splice(findIndex, 1);
-          this.TOTAL += count * price;
-          console.log(this.startDate, '| sell', coin.market, count, price);
+          this.TOTAL += count * price - 0.0005 * count * price;
           console.log(
             'total',
             this.TOTAL,
@@ -295,12 +321,12 @@ class CoinAnalyzer {
         }
       });
 
-      coinNavigators.slice(0, 8).forEach((coin) => {
+      coinNavigators.slice(0, 15).forEach((coin) => {
         if (coin.status === 'buy') {
-          if (account.length >= 8) return;
+          if (account.length >= 4) return;
 
           const price = nowPrice[coin.market];
-          const count = (this.TOTAL * 0.9995) / (8 - account.length) / price;
+          const count = (this.TOTAL * 0.9995) / (4 - account.length) / price;
           this.TOTAL -= count * price + 0.0005 * count * price;
 
           account.push({
