@@ -33,10 +33,6 @@ export const strategy = async (
 ) => {
   try {
     coin.status = 'hold';
-
-    const dayScore = getDayScore(dayCandles);
-    const score = getScore(candles);
-
     coin.score = getScore(candles) + getDayScore(dayCandles);
 
     //사는 조건
@@ -110,12 +106,19 @@ const buyCondition = (candles: Candle[], dayCandles: Candle[]) => {
   const dayMaShort = getMALine(dayCandles, 5);
   const dayMaLong = getMALine(dayCandles, 10);
 
+  const upperTail = candles[0].high_price - candles[0].trade_price;
+  const lowerTail = candles[0].trade_price - candles[0].low_price;
+  const preBody = candles[1].trade_price - candles[1].opening_price;
+  const currentBody = candles[0].trade_price - candles[0].opening_price;
+
   return (
     maShort < maLong &&
     expectedMaShort > expectedMaLong &&
     hourMaShort > hourMaLong &&
     deadCrossCount < 1 &&
-    dayMaShort > dayMaLong
+    dayMaShort > dayMaLong &&
+    upperTail <= lowerTail &&
+    preBody <= currentBody
   );
 };
 

@@ -323,10 +323,10 @@ class CoinAnalyzer {
 
       coinNavigators.slice(0, 15).forEach((coin) => {
         if (coin.status === 'buy') {
-          if (account.length >= 4) return;
+          if (account.length >= 3) return;
 
           const price = nowPrice[coin.market];
-          const count = (this.TOTAL * 0.9995) / (4 - account.length) / price;
+          const count = (this.TOTAL * 0.9995) / (3 - account.length) / price;
           this.TOTAL -= count * price + 0.0005 * count * price;
 
           account.push({
