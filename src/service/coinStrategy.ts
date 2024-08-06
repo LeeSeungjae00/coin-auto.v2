@@ -111,6 +111,14 @@ const buyCondition = (candles: Candle[], dayCandles: Candle[]) => {
   const preBody = candles[1].trade_price - candles[1].opening_price;
   const currentBody = candles[0].trade_price - candles[0].opening_price;
 
+  const squeezeCount = dayCandles
+    .map((val) => val.trade_price)
+    .splice(0, 20)
+    .filter(
+      (val) =>
+        val < maShort + standardDeviation && val > maShort - standardDeviation
+    ).length;
+
   return (
     maShort < maLong &&
     expectedMaShort > expectedMaLong &&
@@ -118,7 +126,8 @@ const buyCondition = (candles: Candle[], dayCandles: Candle[]) => {
     deadCrossCount < 1 &&
     dayMaShort > dayMaLong &&
     upperTail <= lowerTail &&
-    preBody <= currentBody
+    preBody <= currentBody &&
+    squeezeCount < 15
   );
 };
 
@@ -149,10 +158,23 @@ const sellCondition = (candles: Candle[]) => {
     ...candles.map((val) => val.candle_acc_trade_volume)
   );
 
+  let weekCandles = 0;
+  for (let i = 0; i < 10; i++) {
+    const maS =
+      tradePrices.slice(i, shortValue + i).reduce((prev, curr) => {
+        return (prev += curr);
+      }, 0) / shortValue;
+
+    if (maS >= maShort) {
+      weekCandles++;
+    }
+  }
+
   return (
     candles[0].candle_acc_trade_volume === maxVolume ||
     tradePrices[0] > Math.max(maShort * 1.08, bolingerUpper) ||
     tradePrices[0] < Math.min(maShort * 0.92, bolingerLower) ||
-    expectedMaShort < expectedMaLong
+    expectedMaShort < expectedMaLong ||
+    weekCandles > 9
   );
 };
