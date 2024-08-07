@@ -12,7 +12,7 @@ import { sell } from './service/sell';
 dotenv.config();
 
 const mainCron = new CronJob(
-  '0 * * * *',
+  '59 * * * *',
   () => {
     try {
       main();
@@ -49,7 +49,6 @@ const main = async () => {
         market: coin.market,
         to: date.toISOString(),
       });
-      candles.pop();
       dayCandles.pop();
       logger.info(
         `매수 시점 ${candles[0].candle_date_time_kst} | ${dayCandles[0].candle_date_time_kst}`
