@@ -34,10 +34,12 @@ const main = async () => {
       .filter((coin) => !blockedCoin.includes(coin.market))
       .map((val) => ({ ...val, status: 'hold' }));
 
+    const dayDate = new Date();
+    dayDate.setDate(dayDate.getDate() - 1);
+
     await slackSend('=====시 작=====');
     for (const coin of market) {
       const date = new Date();
-      date.setHours(date.getHours() - 1);
       const candles = await getCandles({
         count: 200,
         market: coin.market,
@@ -47,9 +49,9 @@ const main = async () => {
       const dayCandles = await getDayCandles({
         count: 200,
         market: coin.market,
-        to: date.toISOString(),
+        to: dayDate.toISOString(),
       });
-      dayCandles.pop();
+
       logger.info(
         `매수 시점 ${candles[0].candle_date_time_kst} | ${dayCandles[0].candle_date_time_kst}`
       );
