@@ -3,8 +3,8 @@ import { Account, CoinNavigator } from '../interface/upbit';
 import logger from '../loaders/logger';
 import { sleep } from '../utils/sleep';
 
-const MAX_BUY_COUNT = 4;
-const MAX_RANK_COUNT = 12;
+const MAX_BUY_COUNT = 3;
+const MAX_RANK_COUNT = 25;
 
 export const buy = async (market: CoinNavigator[], account: Account[]) => {
   const totalcapital = account.reduce((prev, curr) => {
