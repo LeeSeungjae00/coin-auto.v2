@@ -51,7 +51,9 @@ const main = async () => {
       });
       candles.pop();
       dayCandles.pop();
-      logger.info(`매수 시점 ${candles[0].candle_date_time_kst}`);
+      logger.info(
+        `매수 시점 ${candles[0].candle_date_time_kst} | ${dayCandles[0].candle_date_time_kst}`
+      );
       await strategy(account, coin, candles, dayCandles);
       await sleep(100);
     }
