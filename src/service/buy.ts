@@ -4,7 +4,7 @@ import logger from '../loaders/logger';
 import { sleep } from '../utils/sleep';
 
 const MAX_BUY_COUNT = 3;
-const MAX_RANK_COUNT = 25;
+const MAX_RANK_COUNT = 24;
 
 export const buy = async (market: CoinNavigator[], account: Account[]) => {
   const totalcapital = account.reduce((prev, curr) => {
@@ -22,7 +22,7 @@ export const buy = async (market: CoinNavigator[], account: Account[]) => {
     .splice(0, MAX_RANK_COUNT);
 
   logger.info(
-    `매수 대상 코인  ${rankCoin.map((val) => val.market).join(', ')}`
+    `매수 대상 코인  ${rankCoin.map((val) => `${val.market} | ${val.score}`).join(', ')}`
   );
 
   for (const coin of rankCoin.filter((val) => val.status === 'buy')) {
