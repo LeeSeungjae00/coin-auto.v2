@@ -13,14 +13,19 @@ export const buy = async (market: CoinNavigator[], account: Account[]) => {
   }, 0);
   const price = totalcapital / MAX_BUY_COUNT;
 
-  for (const coin of market
+  const rankCoin = market
     .sort((a, b) => {
       const scoreA = a.score || 0;
       const scoreB = b.score || 0;
       return scoreB - scoreA;
     })
-    .splice(0, MAX_RANK_COUNT)
-    .filter((val) => val.status === 'buy')) {
+    .splice(0, MAX_RANK_COUNT);
+
+  logger.info(
+    `매수 대상 코인  ${rankCoin.map((val) => val.market).join(', ')}`
+  );
+
+  for (const coin of rankCoin.filter((val) => val.status === 'buy')) {
     await postBuyCoin(coin.market, price.toString());
     logger.info(`${coin.market} | ${coin.korean_name} | ${price}원 매수 완료`);
     await sleep(100);
