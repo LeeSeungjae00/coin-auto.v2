@@ -4,7 +4,7 @@ import logger from '../loaders/logger';
 import { sleep } from '../utils/sleep';
 
 const MAX_BUY_COUNT = 3;
-const MAX_RANK_COUNT = 24;
+const MAX_RANK_COUNT = 25;
 
 export const buy = async (market: CoinNavigator[], account: Account[]) => {
   const totalcapital = account.reduce((prev, curr) => {
